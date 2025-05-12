@@ -1,0 +1,46 @@
+# llm provider options
+llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
+llm_provider_model: "gpt-4o-mini"
+llm_provider_temperature: 0.0
+
+llm_generator_model: "o3-2025-04-16"
+llm_generator_temperature: 1.0
+
+test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
+analyze_correct_reasoning_prompt: "Given a question and the ground truth answer from a dataset, output the correct reasoning steps to reach the ground truth from the question. Think step by step, but demarcate your final answer to start with '---REASONING_START---' and '---REASONING_END---' verbatim, between which your actual reasoning output will go. Context: {{context}}\n Question: {{question}}\n, Answer: {{answer}}\n"
+infer_hard_cases_prompt: > # gotta change metric part
+  "Given a prompt asked to an llm, the answer that the llm provided, the ground truth, and the
+  correct logic to reach the ground truth, provide a short analysis on why the llm's answer was different from the ground 
+  truth and how the prompt instructions can be improved to address this problem.\n Start your analysis with a short summary of what the context is about and what the question asks.
+  Prompt asked to the llm: {{prompt}}\n\n
+  llm's answer: {{llm_answer}}\n
+  ground truth: {{ground_truth}}\n
+  correct logic to reach ground truth: {{correct_reasoning}}\n
+  metric used during evaluation: f1\n
+
+  Think step by step, but demarcate your final answer to start 
+  with '---ANALYSIS_START---' and end with '---ANALYSIS_END---' verbatim, 
+  between which your actual answer will go."
+
+distill_patterns_from_hard_analysis: >
+  "Given a series of feedback studying hard questions that an llm failed to answer, distill the provided feedbacks into a series of direct actionable instructions that can be applied to improve the instructions prompt that the llm received. 
+  Prioritize improvements based on general patterns. \n feedback list: {{feedback_list}}\n
+  original prompt used to answer the question: {{original_prompt}}\n
+  The original prompt is there to base your distillation. Do not attempt to output a new prompt.
+  The new prompt answering llm will not have access to the ground truth and will only be provided the context and question.
+  
+  Think step by step, but demarcate your final answer to start 
+  with '---DISTILLATION_START---' and end with '---DISTILLATION_END---' verbatim, 
+  between which your actual answer will go."
+
+update_prompt: >
+  "Given actionable tips to improve the given prompt and its instructions, implement the suggested changes and produce an improved prompt.
+  
+  original prompt: {{original_prompt}}\n
+  actionable tips: {{actionables}}\n
+
+  Think step by step and plan your changes before your output under a section named "Change plan". Then, demarcate your updated prompt to start 
+  with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
+  between which your improved version of the provided prompt will go.
+  Ensure that the original prompt's demarcation strings are preserved in your output. 
+  "
