@@ -4,8 +4,6 @@ import string
 from collections import Counter
 
 def normalize_answer(s):
-    print("\nnormalizing string...\n", s)
-
     def remove_articles(text):
         return re.sub(r'\b(a|an|the)\b', ' ', text)
 
@@ -22,8 +20,6 @@ def normalize_answer(s):
     return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 def f1_match(row_gt: Dict, llm_answer: str):
-    print(type(row_gt["answer"]))
-    print(type(llm_answer))
     gt = normalize_answer(str(row_gt["answer"]))
     llm_answer = normalize_answer(llm_answer)
 

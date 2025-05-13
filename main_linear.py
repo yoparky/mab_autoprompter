@@ -30,7 +30,7 @@ async def main():
     generator_llm = create_llm_instance(config["llm_provider"], config["llm_generator_model"], float(config["llm_generator_temperature"]))
 
     # concurrency
-    max_concurrent_calls = 4
+    max_concurrent_calls = 2
     semaphore = asyncio.Semaphore(max_concurrent_calls)
 
     # heap
@@ -48,13 +48,16 @@ async def main():
     # list of prompts
     next_prompt = config["test_prompt"]
 
-    for k in range(config["loop_iteration_count"]):
+    for k in range(3):
         # prompt
         prompt_node = PromptNode(next_prompt, None)
         # @ VALIDATION
         input_dict = {"context": "context", "question": "question"}
         answer = await batch_unified_call(student_llm, semaphore, val_set, prompt_node.prompt, input_dict)
         prompt_node.set_validation_data(answer, '---ANSWER_START---', '---ANSWER_END---')
+
+        for item in answer[0]:
+            print(item)
 
         rewards = []
         for i, item in enumerate(prompt_node.validation_answers):
@@ -66,15 +69,17 @@ async def main():
         prompt_node.validation_score = val_score
 
         prompt_node.set_validation_mapping()
-        print("validation")
+
         print(prompt_node.validation_rewards)
         print(prompt_node.validation_score)
 
+        ### This should be parameterized. Ensures heap only tracks top k elements
         # This should also be only done with validation sets.
-        if len(node_heap) < config["heap_size"]:
+        if len(node_heap) < 5: # k = 4
             heapq.heappush(node_heap, prompt_node)
         else:
             heapq.heappushpop(node_heap, prompt_node)
+        # Test case logic end, can use same logic for test set
         # For train set, there is a departure in that we CAN use this, but starting with the first call, we need a unified
         # data structure that stores the id: correct reasoning trajectory, so we do not have to make the same calls over and over again
         # @ TRAIN
@@ -88,6 +93,9 @@ async def main():
         prompt_node.set_train_data(answer, '---ANSWER_START---', '---ANSWER_END---')
         rewards = []
 
+        for item in answer[0]:
+            print(item)
+
         for i, item in enumerate(prompt_node.train_answers):
             reward = f1_match(train_set[train_set_lookup[prompt_node.train_ids[i]]], prompt_node.train_answers[i])
             mab.update_testcase_result(prompt_node.train_ids[i], reward)
@@ -98,7 +106,7 @@ async def main():
         prompt_node.train_score = train_score
 
         prompt_node.set_train_mapping()
-        print("train")
+
         print(prompt_node.train_rewards)
         print(prompt_node.train_score)
 
@@ -119,7 +127,11 @@ async def main():
                 reasoning = extract_demarcated_string(item, "---REASONING_START---", "---REASONING_END---")
                 mab.add_correct_reasoning_to_gt(answer[1][i], reasoning)
 
+
         # Analyze why the llm got the question wrong
+        # Can get test_id and correct_reasoning mapping via promt node data
+
+        # print("mappings: ", prompt_node.train_mapping)
         
         list_of_testcases_for_analyze_cust = []
         for item in hardest_cases:
@@ -147,9 +159,12 @@ async def main():
         input_dict = {"feedback_list": "feedback_list", "original_prompt": "original_prompt"}
 
         answer = await batch_unified_call(student_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis"], input_dict)
+        # print("\n\n answer: \n\n", answer)
         distilled_actionables = extract_demarcated_string(answer[0][0], "---DISTILLATION_START---", "---DISTILLATION_END---")
+        # print("\n\n distillations \n\n", distilled_actionables)
 
         # Pick n-shots
+        # print("hardest tests we sample for n-shots")
         k = 4
         hardest_shots = mab.generate_k_shots_sample(train_set, train_set_lookup, k)
         random_number = random.randint(0, len(hardest_shots))
@@ -165,10 +180,21 @@ async def main():
         # print(answer[0][0])
 
         new_prompt = extract_demarcated_string(answer[0][0], "---PROMPT_START---", "---PROMPT_END---")
-        print("\nnew prompt\n", new_prompt)
+        print(new_prompt)
         if "---ANSWER_START---" not in new_prompt and "'---ANSWER_END---" not in new_prompt:
             new_prompt += "\nDemarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
         next_prompt = new_prompt
+        print("hardest tests we sample for n-shots")        
+        hardest_shots = mab.generate_k_shots_sample(train_set, train_set_lookup, 4)
+        for i, item in enumerate(hardest_shots):
+            print("example number ", i)
+            print(item)
+    
+
+    # input_dict = {"prompt": "", "llm_answer": "", "ground_truth": "", "correct_reasoning": ""} # prompt, prompt, dataset
+    # answer = None
+
+    # Wrong Reasoning + Wrong Answer + Correct Reasoning + GT Answer >>> @ Analysis Call @ >>> Analysis on why Model Got Wrong
 
 if __name__ == "__main__":
     try:

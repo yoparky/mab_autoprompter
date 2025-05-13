@@ -1,3 +1,9 @@
+# linear control
+loop_iteration_count: 5
+
+# heap
+heap_size: 5
+
 # llm provider options
 llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
 llm_provider_model: "gpt-4o-mini"
@@ -35,9 +41,12 @@ distill_patterns_from_hard_analysis: >
 
 update_prompt: >
   "Given actionable tips to improve the given prompt and its instructions, implement the suggested changes and produce an improved prompt.
-  
+
   original prompt: {{original_prompt}}\n
   actionable tips: {{actionables}}\n
+  n-shot examples to include: {{n_shots}}\n
+
+  do not include n-shots in the original prompt.
 
   Think step by step and plan your changes before your output under a section named "Change plan". Then, demarcate your updated prompt to start 
   with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
