@@ -1,14 +1,21 @@
 import uuid
-
+import json
+import copy
 from regex_extractor import extract_demarcated_string
+import pandas as pd
 
 class PromptNode:
-    def __init__(self, prompt, parent_id):
+    def __init__(self, prompt, parent):
         self.prompt = prompt
-        self.parent_id = parent_id
+        self.parent_id = None
+        self.children_ids= []
         self.id = str(uuid.uuid4())
         self.has_expanded = False
-
+        self.integrated_parameters = {}
+        if parent:
+            self.parent_id = parent.id
+            self.integrated_parameters = copy.deepcopy(parent.integrated_parameters)
+        
         self.validation_score = 0.0
         self.validation_rewards = []
         self.validation_answers = []
@@ -36,6 +43,7 @@ class PromptNode:
         self.train_literal_prompts = []
         self.train_mapping = {}
         self.train_hard_analysis = {}
+
 
     # SETTER TUPLES: answers, ids, input_tokens, output_tokens, literal_prompt
     def set_validation_data(self, validation_raw_answers, start_demarcator, end_demarcator):
@@ -84,6 +92,56 @@ class PromptNode:
             testcase["literal_prompt"] = self.train_literal_prompts[i]
             self.train_mapping[_id] = testcase
 
+    def update_parameters(self, raw_params: str):
+        params_obj = json.loads(raw_params)
+        for k, v in params_obj.items():
+            if k in self.integrated_parameters:
+                self.integrated_parameters[k].append(v)
+            else:
+                self.integrated_parameters[k] = [v]
+
+    def to_csv_dict(self):
+        """
+        Serializes the PromptNode object to a dictionary suitable for CSV writing.
+        Complex types (lists, dicts) are converted to JSON strings.
+        """
+        return {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "prompt": self.prompt,
+            "children_ids": json.dumps(self.children_ids),
+            "has_expanded": self.has_expanded,
+            "integrated_parameters": json.dumps(self.integrated_parameters),
+
+            "validation_score": self.validation_score,
+            "validation_rewards": json.dumps(self.validation_rewards),
+            "validation_answers": json.dumps(self.validation_answers),
+            "validation_ids": json.dumps(self.validation_ids),
+            "validation_input_tokens": self.validation_input_tokens,
+            "validation_output_tokens": self.validation_output_tokens,
+            "validation_literal_prompts": json.dumps(self.validation_literal_prompts),
+            "validation_mapping": json.dumps(self.validation_mapping),
+
+            "test_score": self.test_score,
+            "test_rewards": json.dumps(self.test_rewards),
+            "test_answers": json.dumps(self.test_answers),
+            "test_ids": json.dumps(self.test_ids),
+            "test_input_tokens": self.test_input_tokens,
+            "test_output_tokens": self.test_output_tokens,
+            "test_literal_prompts": json.dumps(self.test_literal_prompts),
+            "test_mapping": json.dumps(self.test_mapping),
+
+            "train_score": self.train_score,
+            "train_rewards": json.dumps(self.train_rewards),
+            "train_answers": json.dumps(self.train_answers),
+            "train_ids": json.dumps(self.train_ids),
+            "train_input_tokens": self.train_input_tokens,
+            "train_output_tokens": self.train_output_tokens,
+            "train_literal_prompts": json.dumps(self.train_literal_prompts),
+            "train_mapping": json.dumps(self.train_mapping),
+            "train_hard_analysis": json.dumps(self.train_hard_analysis),
+        }
+
     def __lt__(self, other):
         if not isinstance(other, PromptNode): return NotImplemented
         return self.validation_score < other.validation_score
@@ -91,3 +149,57 @@ class PromptNode:
     def __eq__(self, other):
         if not isinstance(other, PromptNode): return NotImplemented
         return self.id == other.id
+    
+
+    ### This goes to the tree
+
+def prompt_nodes_to_dataframe(prompt_node_list):
+    """
+    Converts a list of PromptNode objects into a Pandas DataFrame.
+
+    Args:
+        prompt_node_list (list): A list of PromptNode instances.
+                                 Each instance must have a to_dict() method.
+
+    Returns:
+        pandas.DataFrame: A DataFrame representing the list of PromptNode objects.
+                          Returns an empty DataFrame if the input list is empty or None.
+    """
+    if not prompt_node_list:
+        print("Warning: Prompt node list is empty or None. Returning an empty DataFrame.")
+        return pd.DataFrame()
+
+    # Convert list of PromptNode objects to a list of dictionaries
+    # using the to_dict() method of each node.
+    data_for_df = [node.to_dict() for node in prompt_node_list]
+
+    # Create a Pandas DataFrame from the list of dictionaries
+    try:
+        df = pd.DataFrame(data_for_df)
+        return df
+    except Exception as e:
+        print(f"Error creating DataFrame: {e}")
+        return pd.DataFrame() # Return empty DataFrame on error
+
+
+def save_dataframe_to_csv(dataframe, csv_filepath):
+    """
+    Saves a Pandas DataFrame to a CSV file.
+
+    Args:
+        dataframe (pandas.DataFrame): The DataFrame to save.
+        csv_filepath (str): The path to the CSV file to be created/overwritten.
+    """
+    if dataframe.empty:
+        print(f"Warning: DataFrame is empty. CSV file '{csv_filepath}' will not be created or will be empty.")
+        # Optionally, you might still want to write an empty file with headers
+        # or just skip writing. For now, we'll let to_csv handle it.
+
+    try:
+        # index=False prevents pandas from writing the DataFrame index as a column
+        dataframe.to_csv(csv_filepath, index=False, encoding='utf-8')
+        print(f"Successfully saved DataFrame to {csv_filepath}")
+    except IOError:
+        print(f"IOError: Could not write to CSV file at {csv_filepath}")
+    except Exception as e:
+        print(f"An unexpected error occurred while writing CSV: {e}")

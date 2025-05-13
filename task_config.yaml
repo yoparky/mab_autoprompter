@@ -1,8 +1,20 @@
+
+
 # linear control
 loop_iteration_count: 5
 
+# Concurrency
+max_concurrent_calls: 4
+
 # heap
 heap_size: 5
+
+# max n-shots
+max_n_shots: 4
+# hard question sampling count
+hard_sample_count: 8
+# param sampling count per generation
+max_param_sample_count: 2
 
 # llm provider options
 llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
@@ -29,24 +41,65 @@ infer_hard_cases_prompt: > # gotta change metric part
   between which your actual answer will go."
 
 distill_patterns_from_hard_analysis: >
-  "Given a series of feedback studying hard questions that an llm failed to answer, distill the provided feedbacks into a series of direct actionable instructions that can be applied to improve the instructions prompt that the llm received. 
-  Prioritize improvements based on general patterns. \n feedback list: {{feedback_list}}\n
-  original prompt used to answer the question: {{original_prompt}}\n
+  "Given a series of feedback analyzing hard questions that an llm attempted to answer,  
+  distill the provided feedbacks into a series of direct actionable instructions that can be applied to improve the 
+  instructions prompt that the llm received. 
+  \n feedback list: {{feedback_list}}\n
+  original prompt:\n{{original_prompt}}\n
+
   The original prompt is there to base your distillation. Do not attempt to output a new prompt.
   The new prompt answering llm will not have access to the ground truth and will only be provided the context and question.
-  
+  Focus on patterns rather than detailed answers to potential examples provided in the original prompt.
+
   Think step by step, but demarcate your final answer to start 
   with '---DISTILLATION_START---' and end with '---DISTILLATION_END---' verbatim, 
-  between which your actual answer will go."
+  between which your actual answer will go. For example your output should be in the form:\n
+  ---DISTILLATION_START---
+  YOUR DISTILLATION HERE
+  ---DISTILLATION_END---
+  "
+
+
+parameter_selection_call: >
+  "Your objective is to map `Distilled Tips` for LLM prompt improvement to the most relevant `Parameters` 
+  considering the parameters already active in the prompt being analyzed.
+  
+  Inputs:
+  - `Distilled Tips`: {{distilled_tips}}
+  - `Parameters`: {{params}}
+  - `Active Parameters`: {{active_parameters}} (this is the list of parameter codes currently active in the prompt)
+  In light of the active parameters, identify the most fitting parameter(s) from the `Parameters` dictionary that represent 
+  a needed change or further refinement.
+  If recommending a parameter already listed in `Active Parameters`, ensure the `Distilled Tip` strongly justifies its re-application or refinement.
+  Your output must be a Python dictionary. The keys will be the selected parameter codes. 
+  The values should be concise (1-2 sentences) actionable instructions indicating how the parameter addresses the tip, 
+  potentially acknowledging if it's refining an active parameter.
+
+  Think step-by-step to determine your matches. However, your final response must ONLY contain the Python dictionary, demarcated as follows:
+  ---PARAMETER_START---
+  {output_dictionary_goes_here}
+  ---PARAMETER_END---
+
+  Example:
+  If `Distilled Tip` is "prompt is still a bit wordy, cut unnecessary phrases"
+  And `Parameters` includes `"INSTRUCTION_VERBOSITY_concise": "Make instructions brief."`
+  And `Active Parameters` is `["INSTRUCTION_VERBOSITY_concise", "REASONING_TECHNIQUES_chain_of_thought"]`
+
+  Your thinking: The tip wants more conciseness, even though it's already active. The feedback justifies further refinement. Actionable instruction should reflect this.
+
+  Final Output:
+  ---PARAMETER_START---
+  {"INSTRUCTION_VERBOSITY_concise": "Further refine prompt conciseness by removing any remaining redundant phrases."}
+  ---PARAMETER_END---
+  "
 
 update_prompt: >
-  "Given actionable tips to improve the given prompt and its instructions, implement the suggested changes and produce an improved prompt.
+  "Given actionable parameters to improve the given prompt and its instructions, implement the suggested changes and produce an improved prompt.
 
-  original prompt: {{original_prompt}}\n
-  actionable tips: {{actionables}}\n
-  n-shot examples to include: {{n_shots}}\n
+  original prompt (ignore n-shots in original prompt): {{original_prompt}}\n
+  actionable parameters: {{actionables}}\n
 
-  do not include n-shots in the original prompt.
+  n-shot examples to provide in your new prompt (if any): {{n_shots}}\n
 
   Think step by step and plan your changes before your output under a section named "Change plan". Then, demarcate your updated prompt to start 
   with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 

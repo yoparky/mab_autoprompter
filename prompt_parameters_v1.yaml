@@ -1,0 +1,73 @@
+# CHANGE_PROMPT_WORDING
+CHANGE_PROMPT_WORDING_emphasis_on_clarity: "Ensure prompt language is clear and direct."
+CHANGE_PROMPT_WORDING_reorganize_directions: "Re-structure or re-order prompt instructions for better flow."
+
+# ANSWER_FORMATTING
+ANSWER_FORMATTING_concise: "Request brief, to-the-point answers from LLM."
+ANSWER_FORMATTING_detailed: "Request detailed explanations or reasoning traces from LLM (if applicable)."
+ANSWER_FORMATTING_no_explanation_or_reasoning: "Instruct LLM to provide only the direct answer, no justifications."
+ANSWER_FORMATTING_emphasize_original_answer_format: "Stress LLM's strict adherence to a specified answer format."
+ANSWER_FORMATTING_exclude_whitespace_back_and_front: "Require LLM to trim leading/trailing whitespace from answers."
+
+# REASONING_TECHNIQUES
+REASONING_TECHNIQUES_none: "Request direct answer from LLM without specified reasoning steps."
+REASONING_TECHNIQUES_chain_of_thought: "Instruct LLM to use step-by-step reasoning (Chain-of-Thought)."
+REASONING_TECHNIQUES_ignore_unnecessary_context: "Direct LLM to focus reasoning on essential context and ignore irrelevant parts."
+
+# INSTRUCTION_VERBOSITY (for the prompt itself)
+INSTRUCTION_VERBOSITY_concise: "Make instructions in the prompt brief and to the point."
+INSTRUCTION_VERBOSITY_step_by_step: "Provide instructions in the prompt as a clear sequence of steps."
+
+# PERSONA_ADOPTION
+PERSONA_ADOPTION_none: "Use LLM's default persona; no specific persona instruction."
+PERSONA_ADOPTION_expert: "Instruct LLM to adopt an expert persona relevant to the subject."
+PERSONA_ADOPTION_domain_specialist: "Instruct LLM to act as a specialist in the specific domain of the query."
+
+# GOAL_SPECIFICATION
+GOAL_SPECIFICATION_explicit_and_clear: "Clearly and directly state the LLM's task or objective in the prompt."
+GOAL_SPECIFICATION_multi_part_objectives: "Define the LLM's task as comprising multiple distinct objectives."
+
+# CONSTRAINT_LEVEL
+CONSTRAINT_LEVEL_none: "Impose no specific constraints on the LLM's output."
+CONSTRAINT_LEVEL_strict_boundaries: "Impose firm and extensive limitations or rules for the LLM."
+CONSTRAINT_LEVEL_ethical_guardrails: "Include explicit ethical guidelines or safety constraints for LLM responses."
+
+# NEGATIVE_PROMPTING
+NEGATIVE_PROMPTING_none: "Use only positive instructions (what the LLM should do)."
+NEGATIVE_PROMPTING_specify_what_NOT_to_do: "Include explicit instructions about what the LLM should avoid doing or outputting."
+
+# PROMPT_LENGTH_CONTROL (for the prompt itself being optimized)
+PROMPT_LENGTH_CONTROL_concise_and_brief: "Aim for the prompt text itself to be short and to the point."
+
+# TONE_REQUIREMENT (for the LLM's answer)
+TONE_REQUIREMENT_neutral: "Request a neutral tone in LLM responses."
+TONE_REQUIREMENT_technical: "Request precise, domain-specific technical language, if applicable."
+
+# CONTEXT_HANDLING
+CONTEXT_HANDLING_use_all_provided: "Instruct LLM to consider all parts of the provided context (baseline)."
+CONTEXT_HANDLING_extract_key_info_first: "Instruct LLM to identify and extract key information from context first."
+CONTEXT_HANDLING_cross_reference_context: "Instruct LLM to compare and synthesize info from different context parts."
+
+# ERROR_HANDLING_INSTRUCTION (for the LLM's answer)
+ERROR_HANDLING_INSTRUCTION_attempt_best_guess: "Instruct LLM to provide its most reasonable answer if uncertain (use with caution for factual tasks)."
+
+# VERIFICATION_STEPS (for the LLM's answer)
+VERIFICATION_STEPS_none: "No explicit self-verification steps instructed for the LLM."
+VERIFICATION_STEPS_factual_accuracy_review: "Instruct LLM to review its answer for factual accuracy against the provided context."
+
+# AUDIENCE_TARGETING (for the LLM's answer, if it includes explanation)
+AUDIENCE_TARGETING_general_audience: "Target LLM's explanation style for a general audience."
+AUDIENCE_TARGETING_expert_level: "Target LLM's explanation style for subject matter experts."
+
+# TEMPLATE_STRUCTURE (for the prompt itself being optimized)
+TEMPLATE_STRUCTURE_structured_sections: "Organize the prompt into clearly defined, structured sections."
+TEMPLATE_STRUCTURE_input_output_pairs: "Use explicit input-output examples (few-shot) within the prompt."
+TEMPLATE_STRUCTURE_role_based_framing: "Frame the prompt using roles (e.g., 'User:', 'Policy Excerpt:', 'Question:')."
+TEMPLATE_STRUCTURE_re_state_critical_direction_at_bottom: "Repeat the most crucial instruction at the end of the prompt for more attention."
+
+# CREATIVITY_DIRECTION (for the LLM's answer)
+CREATIVITY_DIRECTION_factual_analytical: "Instruct LLM to focus on factual, analytical, and objective responses."
+CREATIVITY_DIRECTION_verbatim_from_context: "Instruct LLM to reproduce information exactly from the provided context."
+
+# Other (should be covered as a limitation)
+OTHER_CUSTOM_INSTRUCTION: "Apply a specific, novel instruction not covered by other predefined parameters."
