@@ -30,12 +30,12 @@ async def main():
     
     # must make sure datasets have a unique "_id" column
     dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(squad_file_path))
-    dataset = dataset[:30]
+    dataset = dataset[300:320]
     test_set, train_set, val_set = split_data(dataset)
     
     # llm setup
     student_llm = create_llm_instance(config["llm_provider"], config["llm_provider_model"], float(config["llm_provider_temperature"]))
-    generator_llm = create_llm_instance(config["llm_provider"], config["llm_generator_model"], float(config["llm_generator_temperature"]))
+    generator_llm = create_llm_instance(config["llm_generator"], config["llm_generator_model"], float(config["llm_generator_temperature"]))
 
     # concurrency
     max_concurrent_calls = config["max_concurrent_calls"]
@@ -149,7 +149,7 @@ async def main():
             if list_of_testcases_to_analyze:
                 analysis_prompt = config["analyze_correct_reasoning_prompt"]
                 input_dict = {"context": "context", "question": "question", "answer": "answer"}
-                answer = await batch_unified_call(student_llm, semaphore, list_of_testcases_to_analyze, analysis_prompt, input_dict)
+                answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_to_analyze, analysis_prompt, input_dict)
                 for i, item in enumerate(answer[0]):
                     reasoning = extract_demarcated_string(item, "---REASONING_START---", "---REASONING_END---")
                     mab.add_correct_reasoning_to_gt(answer[1][i], reasoning)
@@ -165,7 +165,7 @@ async def main():
                 to_add["correct_reasoning"] = mab.test_data[item]["reasoning"]
                 list_of_testcases_for_analyze_cust.append(to_add)
             input_dict = {"prompt": "prompt", "llm_answer": "llm_answer", "ground_truth": "ground_truth", "correct_reasoning": "correct_reasoning"}
-            answer = await batch_unified_call(student_llm, semaphore, list_of_testcases_for_analyze_cust, config["infer_hard_cases_prompt"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_for_analyze_cust, config["infer_hard_cases_prompt"], input_dict)
             for i, item in enumerate(answer[1]): # results are stored in node_to_expand
                 node_to_expand.train_hard_analysis[answer[1][i]] = extract_demarcated_string(answer[0][i], "---ANALYSIS_START---", "---ANALYSIS_END---")
 
@@ -176,7 +176,7 @@ async def main():
                 distillation += v + "\n"
             input_for_distillation.append({"_id": "distillation", "feedback_list": distillation, "original_prompt": node_to_expand.prompt})
             input_dict = {"feedback_list": "feedback_list", "original_prompt": "original_prompt"}
-            answer = await batch_unified_call(student_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis"], input_dict)
             distilled_actionables = extract_demarcated_string(answer[0][0], "---DISTILLATION_START---", "---DISTILLATION_END---")
             # BASIC LOGGING
             print(">>>>>> demo distillation >>>>>>")
@@ -188,7 +188,7 @@ async def main():
             input_for_parameter = []
             input_for_parameter.append({"_id": "param_selection","distilled_tips": distilled_actionables, "params": json.dumps(params), "active_parameters": node_to_expand.integrated_parameters}) # unify terminology
             input_dict = {"distilled_tips": "distilled_tips", "params": "params", "active_parameters": "active_parameters"}
-            answer = await batch_unified_call(student_llm, semaphore, input_for_parameter, config["parameter_selection_call"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, config["parameter_selection_call"], input_dict)
             selected_parameters = extract_demarcated_string(answer[0][0], "---PARAMETER_START---", "---PARAMETER_END---")
             # BASIC LOGGING
             print(">>>>>> demo param selection >>>>>>")
