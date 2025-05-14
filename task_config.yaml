@@ -19,11 +19,15 @@ hard_sample_count: 8
 max_param_sample_count: 2
 
 # llm provider options
-llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
-llm_provider_model: "gpt-4o-mini"
+# llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
+# llm_provider_model: "gpt-4o-mini"
+# llm_provider_temperature: 0.0
+
+llm_provider: "ollama" # "anthropic" "google" "ollama" "vllm" "url"
+llm_provider_model: "qwen3:4b"
 llm_provider_temperature: 0.0
 
-llm_generator_model: "o3-2025-04-16"
+llm_generator_model: "gpt-4o" #"o3-2025-04-16"
 llm_generator_temperature: 1.0
 
 test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."

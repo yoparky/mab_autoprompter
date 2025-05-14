@@ -1,5 +1,8 @@
 import asyncio
 
+# import logging
+# import traceback
+
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.language_models import BaseChatModel 
 
@@ -14,6 +17,15 @@ async def unified_call(llm, semaphore, testcase, prompt, input_dict):
             response = await chain.ainvoke(processed_input_dict)
             return response, testcase["_id"], used_prompt_literal
         except Exception as e: 
+            # error_type = type(e).__name__
+            # error_message = str(e)
+            # full_traceback = traceback.format_exc()
+            # logging.error(
+            #     f"Error in unified_call for testcase_id '{testcase.get('_id', 'UnknownID')}':\n"
+            #     f"Type: {error_type}\n"
+            #     f"Message: {error_message}\n"
+            #     f"Traceback:\n{full_traceback}"
+            # )
             return None, testcase["_id"], None
 
 async def batch_unified_call(llm, semaphore, testcases, prompt, input_dict):
@@ -23,12 +35,11 @@ async def batch_unified_call(llm, semaphore, testcases, prompt, input_dict):
         tasks.append(task)
     result = await asyncio.gather(*tasks)
     answers, ids, input_tokens, output_tokens, literal_prompt = [], [], [], [], []
-
     for item in result:
         if item[0] is None: continue
         answers.append(item[0].content)
-        input_tokens.append(item[0].response_metadata.get("token_usage").get("prompt_tokens"))
-        output_tokens.append(item[0].response_metadata.get("token_usage").get("completion_tokens"))
+        input_tokens.append(item[0].usage_metadata.get("input_tokens"))
+        output_tokens.append(item[0].usage_metadata.get("output_tokens"))
         ids.append(item[1])
         literal_prompt.append(item[2])
 
