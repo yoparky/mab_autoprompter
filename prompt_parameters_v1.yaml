@@ -11,7 +11,7 @@ ANSWER_FORMATTING_exclude_whitespace_back_and_front: "Require LLM to trim leadin
 
 # REASONING_TECHNIQUES
 REASONING_TECHNIQUES_none: "Request direct answer from LLM without specified reasoning steps."
-REASONING_TECHNIQUES_chain_of_thought: "Instruct LLM to use step-by-step reasoning (Chain-of-Thought)."
+REASONING_TECHNIQUES_chain_of_thought: "Instruct LLM to use step-by-step reasoning (Chain-of-Thought) before filling the demarcated answer section."
 REASONING_TECHNIQUES_ignore_unnecessary_context: "Direct LLM to focus reasoning on essential context and ignore irrelevant parts."
 
 # INSTRUCTION_VERBOSITY (for the prompt itself)

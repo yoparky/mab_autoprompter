@@ -1,4 +1,6 @@
-
+# tree control
+tree_generative_iteration: 5
+children_generation_per_node_expansion: 12
 
 # linear control
 loop_iteration_count: 5
@@ -101,7 +103,8 @@ update_prompt: >
 
   n-shot examples to provide in your new prompt (if any): {{n_shots}}\n
 
-  Think step by step and plan your changes before your output under a section named "Change plan". Then, demarcate your updated prompt to start 
+  Think step by step and plan your changes before your output under a section named "Change plan". 
+  Then, demarcate your updated prompt to start 
   with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
   between which your improved version of the provided prompt will go.
   Ensure that the original prompt's demarcation strings are preserved in your output. 

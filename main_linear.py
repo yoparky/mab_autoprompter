@@ -14,6 +14,7 @@ from metrics.f1_match import f1_match
 from regex_extractor import extract_demarcated_string
 from mab import MAB
 # REMEMBER TO UNIFY CALLS FOR TREES
+
 async def main():
     config_file_path = "./task_config.yaml"
     squad_file_path = "./squad-train-v2.0.json"

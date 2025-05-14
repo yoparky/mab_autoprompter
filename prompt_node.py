@@ -93,7 +93,9 @@ class PromptNode:
             self.train_mapping[_id] = testcase
 
     def update_parameters(self, raw_params: str):
-        params_obj = json.loads(raw_params)
+        params_obj = {}
+        if raw_params:
+            params_obj = json.loads(raw_params)
         for k, v in params_obj.items():
             if k in self.integrated_parameters:
                 self.integrated_parameters[k].append(v)

@@ -90,7 +90,7 @@ class MAB:
                 answer = train_set[index]["answer"]
                 reasoning = self.test_data[_id]["reasoning"]
 
-                example = f"context: {context}\nground truth: {answer}\ncorrect reasoning: {reasoning}\n"
+                example = f"context: {context}\nground truth: {answer}\ncorrect reasoning: {reasoning}"
                 formatted_shots_string_list.append(example)
         
         return formatted_shots_string_list
@@ -105,7 +105,7 @@ class MAB:
                 answer = train_set[index]["answer"]
                 reasoning = self.test_data[_id]["reasoning"]
 
-                example = f"context: {context}\n ground truth: {answer}\n correct reasoning: {reasoning}\n"
+                example = f"context: {context}\nground truth: {answer}\ncorrect reasoning: {reasoning}"
                 formatted_shots_string_list.append(example)
         
         return formatted_shots_string_list
