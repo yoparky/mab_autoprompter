@@ -1,4 +1,6 @@
 __pycache__/
 metrics/__pycache__/
-
+data/__pycache__/
+llm_calls/__pycache__/
+utils/__pycache__/
 *.pyc

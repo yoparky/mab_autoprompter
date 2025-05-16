@@ -124,7 +124,7 @@ def visualize_prompt_tree(csv_path, output_filename="prompt_version_tree", outpu
         print(f"An error occurred during graph rendering: {e}")
 
 if __name__ == "__main__":
-    csv_file_path = 'results_dataframe.csv'
+    csv_file_path = '../results/results_dataframe.csv'
     output_base_name = 'prompt_version_hierarchy_colored'
     if not os.path.exists(csv_file_path):
         print(f"Error: CSV file does not exist: '{csv_file_path}'")
