@@ -1,8 +1,8 @@
 # Meta parameters, prompts config
-parameters_file_path: "./prompt_parameters_v1.yaml"
+parameters_file_path: "./config/prompt_parameters_v1.yaml"
 
 # Dataset config
-dataset_file_path: "./squad-train-v2.0.json"
+dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
 dataset_cut_start_index: 300
 dataset_cut_end_index: 320
 

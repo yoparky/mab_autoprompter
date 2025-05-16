@@ -1,7 +1,7 @@
 import uuid
 import json
 import copy
-from regex_extractor import extract_demarcated_string
+from llm_calls.regex_extractor import extract_demarcated_string
 
 class PromptNode:
     def __init__(self, prompt, parent):
