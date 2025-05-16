@@ -2,7 +2,6 @@ import uuid
 import json
 import copy
 from regex_extractor import extract_demarcated_string
-import pandas as pd
 
 class PromptNode:
     def __init__(self, prompt, parent):
@@ -103,10 +102,6 @@ class PromptNode:
                 self.integrated_parameters[k] = [v]
 
     def to_dict(self):
-        """
-        Serializes the PromptNode object to a dictionary suitable for CSV writing.
-        Complex types (lists, dicts) are converted to JSON strings.
-        """
         return {
             "id": self.id,
             "parent_id": self.parent_id,
@@ -151,57 +146,3 @@ class PromptNode:
     def __eq__(self, other):
         if not isinstance(other, PromptNode): return NotImplemented
         return self.id == other.id
-    
-
-    ### For testing later on
-
-def prompt_nodes_to_dataframe(prompt_node_list):
-    """
-    Converts a list of PromptNode objects into a Pandas DataFrame.
-
-    Args:
-        prompt_node_list (list): A list of PromptNode instances.
-                                 Each instance must have a to_dict() method.
-
-    Returns:
-        pandas.DataFrame: A DataFrame representing the list of PromptNode objects.
-                          Returns an empty DataFrame if the input list is empty or None.
-    """
-    if not prompt_node_list:
-        print("Warning: Prompt node list is empty or None. Returning an empty DataFrame.")
-        return pd.DataFrame()
-
-    # Convert list of PromptNode objects to a list of dictionaries
-    # using the to_dict() method of each node.
-    data_for_df = [node.to_dict() for node in prompt_node_list]
-
-    # Create a Pandas DataFrame from the list of dictionaries
-    try:
-        df = pd.DataFrame(data_for_df)
-        return df
-    except Exception as e:
-        print(f"Error creating DataFrame: {e}")
-        return pd.DataFrame() # Return empty DataFrame on error
-
-
-def save_dataframe_to_csv(dataframe, csv_filepath):
-    """
-    Saves a Pandas DataFrame to a CSV file.
-
-    Args:
-        dataframe (pandas.DataFrame): The DataFrame to save.
-        csv_filepath (str): The path to the CSV file to be created/overwritten.
-    """
-    if dataframe.empty:
-        print(f"Warning: DataFrame is empty. CSV file '{csv_filepath}' will not be created or will be empty.")
-        # Optionally, you might still want to write an empty file with headers
-        # or just skip writing. For now, we'll let to_csv handle it.
-
-    try:
-        # index=False prevents pandas from writing the DataFrame index as a column
-        dataframe.to_csv(csv_filepath, index=False, encoding='utf-8')
-        print(f"Successfully saved DataFrame to {csv_filepath}")
-    except IOError:
-        print(f"IOError: Could not write to CSV file at {csv_filepath}")
-    except Exception as e:
-        print(f"An unexpected error occurred while writing CSV: {e}")
