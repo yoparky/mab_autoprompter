@@ -1,3 +1,5 @@
+# requires .env file to run openai api
+
 # Meta parameters, prompts config
 parameters_file_path: "./config/prompt_parameters_v1.yaml"
 
@@ -5,6 +7,10 @@ parameters_file_path: "./config/prompt_parameters_v1.yaml"
 dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
 dataset_cut_start_index: 300
 dataset_cut_end_index: 320
+
+# Results config
+output_file_path: "./results/results_dataframe.csv"
+output_tree_path: "./results/prompt_tree"
 
 # tree control
 tree_generative_iteration: 2

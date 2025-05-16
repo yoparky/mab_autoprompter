@@ -1,7 +1,12 @@
 import pandas as pd
 import graphviz
 import os
+import yaml
 
+config_file_path = "./task_config.yaml"
+with open(config_file_path, "r") as file:
+    config = yaml.safe_load(file)
+    
 def visualize_prompt_tree(csv_path, output_filename="prompt_version_tree", output_format="png", view_after_render=True):
     """
     Generates a tree visualization from a CSV file containing prompt version data,
@@ -124,8 +129,8 @@ def visualize_prompt_tree(csv_path, output_filename="prompt_version_tree", outpu
         print(f"An error occurred during graph rendering: {e}")
 
 if __name__ == "__main__":
-    csv_file_path = '../results/results_dataframe.csv'
-    output_base_name = 'prompt_version_hierarchy_colored'
+    csv_file_path = config['output_file_path']
+    output_base_name = config['output_tree_path']
     if not os.path.exists(csv_file_path):
         print(f"Error: CSV file does not exist: '{csv_file_path}'")
     else:

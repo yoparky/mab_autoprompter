@@ -309,7 +309,7 @@ async def main():
     
     df_nodes = pd.DataFrame(list_for_df)
 
-    csv_file_path = "./results/results_dataframe.csv"
+    csv_file_path = config["output_file_path"]
     try:
         df_nodes.to_csv(csv_file_path, index=False, encoding='utf-8')
     except Exception as e:
