@@ -4,17 +4,18 @@
 parameters_file_path: "./config/prompt_parameters_v1.yaml"
 
 # Dataset config
-dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
+# dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
+dataset_file_path: "./data/data_sets/hotpot_dev_fullwiki_v1.json"
 dataset_cut_start_index: 300
-dataset_cut_end_index: 320
+dataset_cut_end_index: 400
 
 # Results config
 output_file_path: "./results/results_dataframe.csv"
 output_tree_path: "./results/prompt_tree"
 
 # tree control
-tree_generative_iteration: 2
-children_generation_per_node_expansion: 2
+tree_generative_iteration: 5
+children_generation_per_node_expansion: 4
 
 # linear control
 loop_iteration_count: 5
@@ -43,7 +44,11 @@ llm_provider_temperature: 0.0
 
 llm_generator: "openai"
 llm_generator_model: "gpt-4o" #"o3-2025-04-16"
-llm_generator_temperature: 1.0
+llm_generator_temperature: 0.7
+
+llm_advanced_generator: "openai" 
+llm_advanced_generator_model: "o3-2025-04-16"
+llm_advanced_generator_temperature: 1.0
 
 test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
 analyze_correct_reasoning_prompt: "Given a question and the ground truth answer from a dataset, output the correct reasoning steps to reach the ground truth from the question. Think step by step, but demarcate your final answer to start with '---REASONING_START---' and '---REASONING_END---' verbatim, between which your actual reasoning output will go. Context: {{context}}\n Question: {{question}}\n, Answer: {{answer}}\n"
@@ -119,12 +124,10 @@ update_prompt: >
 
   original prompt (ignore n-shots in original prompt): {{original_prompt}}\n
   actionable parameters: {{actionables}}\n
-
   n-shot examples to provide in your new prompt (if any): {{n_shots}}\n
 
-  Think step by step and plan your changes before your output under a section named "Change plan". 
+  Think step by step and plan your changes before your output under a section named "---CHANGE_PLAN---". 
   Then, demarcate your updated prompt to start 
   with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
   between which your improved version of the provided prompt will go.
-  Ensure that the original prompt's demarcation strings are preserved in your output. 
   "

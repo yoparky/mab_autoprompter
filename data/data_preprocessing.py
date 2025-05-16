@@ -36,6 +36,25 @@ def split_data(dataset, test_ratio = 0.5, train_ratio = 0.3, val_ratio = 0.2):
 # Data specific
 
 import json
+def hpqa_filepath_to_list_of_testcases(file_path):
+    """
+    Converts SQuAD JSON data from a file to a pandas DataFrame.
+
+    Args:
+      file_path (str): The path to the SQuAD JSON file.
+
+    Returns:
+      pandas.DataFrame: A DataFrame where each row represents a question-answer entry.
+                        Returns None if the file is not found or is not valid JSON.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            hpqa_list = json.load(f)
+    except Exception as e:
+        print(f"An unexpected error occurred while reading the file: {e}")
+        return None
+    return hpqa_list
+    
 
 def squad_json_to_dataframe_from_file(file_path):
     """
@@ -96,3 +115,4 @@ def squad_json_to_dataframe_from_file(file_path):
                 rows_list.append(row)
 
     return pd.DataFrame(rows_list)
+

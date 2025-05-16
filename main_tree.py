@@ -10,7 +10,7 @@ import logging
 import traceback
 
 from llm_calls.llm_provider import create_llm_instance
-from data.data_preprocessing import dataframe_to_list_of_dicts, squad_json_to_dataframe_from_file, split_data
+from data.data_preprocessing import dataframe_to_list_of_dicts, squad_json_to_dataframe_from_file, split_data, hpqa_filepath_to_list_of_testcases
 from llm_calls.semaphore_call import batch_unified_call
 from utils.prompt_node import PromptNode
 from metrics.exact_match import exact_match
@@ -30,13 +30,15 @@ async def main():
     dataset_file_path = config["dataset_file_path"]
 
     # must make sure datasets have a unique "_id" column
-    dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(dataset_file_path))
+    # dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(dataset_file_path)) # SQuAD
+    dataset = hpqa_filepath_to_list_of_testcases(dataset_file_path) # HPQA
     dataset = dataset[config["dataset_cut_start_index"]:config["dataset_cut_end_index"]]
     test_set, train_set, val_set = split_data(dataset)
     
     # llm setup
     student_llm = create_llm_instance(config["llm_provider"], config["llm_provider_model"], float(config["llm_provider_temperature"]))
     generator_llm = create_llm_instance(config["llm_generator"], config["llm_generator_model"], float(config["llm_generator_temperature"]))
+    advanced_generator_llm = create_llm_instance(config["llm_advanced_generator"], config["llm_advanced_generator_model"], float(config["llm_advanced_generator_temperature"]))
 
     # concurrency
     max_concurrent_calls = config["max_concurrent_calls"]
@@ -196,7 +198,7 @@ async def main():
             if hardest_shots:
                 one_shot_str += hardest_shots[0]
             
-            random_int = random.randrange(len(hardest_shots))
+            random_int = random.randrange(len(hardest_shots) if hardest_shots else 0)
             random_samples = random.sample(range(len(hardest_shots)), random_int)
             random_samples_shots_string = "" # %8 deterministic string based on order of hard samples
             for item in random_samples:
@@ -247,12 +249,12 @@ async def main():
             for key_str in picked_strategies:
                 input_for_prompt_update.append(strategies[key_str])
             input_dict = {"original_prompt": "original_prompt", "actionables": "actionables", "n_shots": "n_shots"}
-            answer = await batch_unified_call(generator_llm, semaphore, input_for_prompt_update, config["update_prompt"], input_dict)
+            answer = await batch_unified_call(advanced_generator_llm, semaphore, input_for_prompt_update, config["update_prompt"], input_dict)
             for i, call_input in enumerate(input_for_prompt_update):
                 param_string = call_input["actionables"]
                 new_prompt_str = extract_demarcated_string(answer[0][i], "---PROMPT_START---", "---PROMPT_END---")
                 if "---ANSWER_START---" not in new_prompt_str and "'---ANSWER_END---" not in new_prompt_str:
-                    new_prompt_str += "\nDemarcate your final answer with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
+                    new_prompt_str += "\nOutput your final answer between '---ANSWER_START---' and '---ANSWER_END---' verbatim."
                 generated_prompt_obj = PromptNode(new_prompt_str, node_to_expand)
                 generated_prompt_obj.update_parameters(param_string)
                 node_to_expand.children_ids.append(generated_prompt_obj.id)
