@@ -102,7 +102,7 @@ class PromptNode:
             else:
                 self.integrated_parameters[k] = [v]
 
-    def to_csv_dict(self):
+    def to_dict(self):
         """
         Serializes the PromptNode object to a dictionary suitable for CSV writing.
         Complex types (lists, dicts) are converted to JSON strings.
@@ -153,7 +153,7 @@ class PromptNode:
         return self.id == other.id
     
 
-    ### This goes to the tree
+    ### For testing later on
 
 def prompt_nodes_to_dataframe(prompt_node_list):
     """

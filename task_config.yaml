@@ -1,6 +1,6 @@
 # tree control
-tree_generative_iteration: 5
-children_generation_per_node_expansion: 12
+tree_generative_iteration: 2
+children_generation_per_node_expansion: 2
 
 # linear control
 loop_iteration_count: 5

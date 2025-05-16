@@ -4,6 +4,7 @@ import sys
 import heapq
 import random
 import json
+import pandas as pd
 
 import logging
 import traceback
@@ -347,6 +348,20 @@ async def main():
     
     print("best prompt: ", ordered_list_of_best_prompts[-1].prompt)
     print("\nintegrated parameters:\n", ordered_list_of_best_prompts[-1].integrated_parameters)
+
+    list_for_df = []
+    for node in node_heap:
+        dict_of_node = node.to_dict()
+        list_for_df.append(dict_of_node)
+    
+    df_nodes = pd.DataFrame(list_for_df)
+    print(df_nodes)
+
+    csv_file_path = "results_dataframe.csv"
+    try:
+        df_nodes.to_csv(csv_file_path, index=False, encoding='utf-8')
+    except Exception as e:
+        print(f"error writing csv: {e}")
 
 if __name__ == "__main__":
     try:
