@@ -20,16 +20,17 @@ from mab import MAB
 
 async def main():
     config_file_path = "./task_config.yaml"
-    squad_file_path = "./squad-train-v2.0.json"
-    parameters_file_path = "./prompt_parameters_v1.yaml"
-
+    
     with open(config_file_path, "r") as file:
         config = yaml.safe_load(file)
-    with open(parameters_file_path, "r") as file:
-        params = yaml.safe_load(file) 
+    parameters_file_path = config["parameters_file_path"]
     
+    with open(parameters_file_path, "r") as file:
+        params = yaml.safe_load(file)
+    dataset_file_path = config["dataset_file_path"]
+
     # must make sure datasets have a unique "_id" column
-    dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(squad_file_path))
+    dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(dataset_file_path))
     dataset = dataset[config["dataset_cut_start_index"]:config["dataset_cut_end_index"]]
     test_set, train_set, val_set = split_data(dataset)
     

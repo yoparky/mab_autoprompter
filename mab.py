@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import List
 
 from scipy.stats import beta as beta_dist
 
@@ -15,9 +15,7 @@ class MAB:
                 'reasoning': "", # correct reasoning to reach gt
             }
         self.has_reasoning = set()
-
         self.params_data = {}
-
     
     def update_testcase_result(self, _id: str, reward: float):
         if _id not in self.test_data.keys():
@@ -111,7 +109,6 @@ class MAB:
         return formatted_shots_string_list
     
     # PARAMS SECTION FROM HERE
-
     def initialize_params_data(self, params):
         for k, v in params.items():
             self.params_data[k] = {

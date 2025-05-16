@@ -1,4 +1,8 @@
+# Meta parameters, prompts config
+parameters_file_path: "./prompt_parameters_v1.yaml"
+
 # Dataset config
+dataset_file_path: "./squad-train-v2.0.json"
 dataset_cut_start_index: 300
 dataset_cut_end_index: 320
 
@@ -9,8 +13,8 @@ children_generation_per_node_expansion: 2
 # linear control
 loop_iteration_count: 5
 
-# Concurrency
-max_concurrent_calls: 4
+# Concurrency 
+max_concurrent_calls: 4 # Semaphore count
 
 # heap
 heap_size: 5
