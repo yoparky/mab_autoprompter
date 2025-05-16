@@ -30,7 +30,7 @@ async def main():
     
     # must make sure datasets have a unique "_id" column
     dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(squad_file_path))
-    dataset = dataset[300:320]
+    dataset = dataset[config["dataset_cut_start_index"]:config["dataset_cut_end_index"]]
     test_set, train_set, val_set = split_data(dataset)
     
     # llm setup
@@ -73,11 +73,7 @@ async def main():
 
     # Main linear loop
     try:
-        for k in range(config["tree_generative_iteration"]):
-            # # prompt
-            # prompt_node = PromptNode(next_prompt, prev_prompt)
-            # prompt_node.update_parameters(next_prompt_params)
-
+        for _ in range(config["tree_generative_iteration"]):
             for generated_node in to_validate:
                 # @ VALIDATION
                 input_dict = {"context": "context", "question": "question"}
@@ -100,8 +96,7 @@ async def main():
                     heapq.heappush(node_heap, generated_node)
                 else:
                     heapq.heappushpop(node_heap, generated_node)
-            # At this point, all the nodes that were generated have updated validation scores
-            # and the heap is updated based on the validation values
+            # At this point, all the nodes that were generated have updated validation scores and the heap is updated based on the validation values
 
             # We now must pick out the best unexplored node in the heap and start the expansion (generation) process
             ordered_list_of_best_prompts = heapq.nlargest(len(node_heap), node_heap)
@@ -257,7 +252,7 @@ async def main():
                 param_string = call_input["actionables"]
                 new_prompt_str = extract_demarcated_string(answer[0][i], "---PROMPT_START---", "---PROMPT_END---")
                 if "---ANSWER_START---" not in new_prompt_str and "'---ANSWER_END---" not in new_prompt_str:
-                    new_prompt_str += "\nDemarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
+                    new_prompt_str += "\nDemarcate your final answer with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
                 generated_prompt_obj = PromptNode(new_prompt_str, node_to_expand)
                 generated_prompt_obj.update_parameters(param_string)
                 node_to_expand.children_ids.append(generated_prompt_obj.id)
@@ -276,7 +271,7 @@ async def main():
     print("\nbest prompt validation: ", best_prompt)
     print("score: ", best_prompt.validation_score,)
 
-    # Test call for baseline prompt
+    # @ TEST CALL for baseline prompt
     input_dict = {"context": "context", "question": "question"}
     answer = await batch_unified_call(student_llm, semaphore, test_set, prompt_node.prompt, input_dict)
     prompt_node.set_test_data(answer, '---ANSWER_START---', '---ANSWER_END---')
@@ -306,6 +301,7 @@ async def main():
     print("best prompt test: ", ordered_list_of_best_prompts[-1].prompt)
     print("\nintegrated parameters: ", ordered_list_of_best_prompts[-1].integrated_parameters)
 
+    # Write logs
     list_for_df = []
     for node in node_heap:
         dict_of_node = node.to_dict()

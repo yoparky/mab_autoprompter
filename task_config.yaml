@@ -1,3 +1,7 @@
+# Dataset config
+dataset_cut_start_index: 300
+dataset_cut_end_index: 320
+
 # tree control
 tree_generative_iteration: 2
 children_generation_per_node_expansion: 2
