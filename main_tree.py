@@ -17,7 +17,6 @@ from metrics.exact_match import exact_match
 from metrics.f1_match import f1_match
 from regex_extractor import extract_demarcated_string
 from mab import MAB
-# REMEMBER TO UNIFY CALLS FOR TREES
 
 async def main():
     config_file_path = "./task_config.yaml"
@@ -168,11 +167,6 @@ async def main():
             input_dict = {"feedback_list": "feedback_list", "original_prompt": "original_prompt"}
             answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis"], input_dict)
             distilled_actionables = extract_demarcated_string(answer[0][0], "---DISTILLATION_START---", "---DISTILLATION_END---")
-            # BASIC LOGGING
-            print(">>>>>> demo distillation >>>>>>")
-            print(distilled_actionables)
-            print(">>>>>>>>>>>>")
-            # BASIC LOGGING END
 
             # @ PARAMETER CALL
             input_for_parameter = []
@@ -180,11 +174,6 @@ async def main():
             input_dict = {"distilled_tips": "distilled_tips", "params": "params", "active_parameters": "active_parameters"}
             answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, config["parameter_selection_call"], input_dict)
             selected_parameters = extract_demarcated_string(answer[0][0], "---PARAMETER_START---", "---PARAMETER_END---")
-            # BASIC LOGGING
-            print(">>>>>> demo param selection >>>>>>")
-            print(selected_parameters) # %1 The raw params recommendation from the llm
-            print(">>>>>>>>>>>>")
-            # BASIC LOGGING END
 
             # @ RANK PARAMS BASED ON MAB, ONLY APPLY TOP J
             max_param_count_per_generation = config["max_param_sample_count"]
