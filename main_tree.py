@@ -95,12 +95,6 @@ async def main():
                 generated_node.set_validation_mapping()
                 # Update MAB parameter scores
                 mab.update_params_result(generated_node.integrated_parameters, generated_node.validation_score)
-                # BASIC LOGGING
-                print(generated_node.id)
-                print("validation")
-                # print(generated_node.validation_rewards)
-                print(generated_node.validation_score)
-                # BASIC LOGGING END
 
                 # Heap tracking best-performing items
                 if len(node_heap) < config["heap_size"]:
@@ -134,11 +128,6 @@ async def main():
             node_to_expand.train_rewards = rewards
             node_to_expand.train_score = train_score
             node_to_expand.set_train_mapping()
-            # BASIC LOGGING
-            print("train")
-            # print(node_to_expand.train_rewards)
-            print(node_to_expand.train_score)
-            # BASIC LOGGING END
 
             # CORRECT REASONING INFERENCE FOR PREVIOUSLY UNPROCESSED HARD QUESTIONS
             hardest_cases = mab.sample_k_hardest(config["hard_sample_count"]) # list of str, [_id]
@@ -284,16 +273,9 @@ async def main():
                 generated_prompt_obj.update_parameters(param_string)
                 node_to_expand.children_ids.append(generated_prompt_obj.id)
                 to_validate.append(generated_prompt_obj)
-    except Exception as e: # This will catch ANY unhandled exception from the loop
-        # Get the full traceback string for the broader exception
+    except Exception as e:
         outer_traceback = traceback.format_exc()
-        # It's helpful to know which 'k' was being processed if the error happened mid-loop.
-        # Note: If the error happens very early (e.g., in self.params_data.items() itself),
-        # 'k' might not be defined yet. The traceback will be key.
-        current_k_info = f"Current key 'k' (if available): {k if 'k' in locals() else 'Not available or error before k assignment'}"
         logging.error(
-            f"A broad exception was caught in the _sample_sort_all_params loop.\n"
-            f"{current_k_info}\n"
             f"Type of exception: {type(e).__name__}\n"
             f"Exception details: {e}\n"
             f"Full Traceback from outer catch:\n{outer_traceback}"
@@ -302,7 +284,7 @@ async def main():
     # TEST CALL ON BEST VALIDATION-PERFORMANCE PROMPTS IN HEAP
     ordered_list_of_best_prompts = heapq.nlargest(len(node_heap), node_heap)
     best_prompt = ordered_list_of_best_prompts[0]
-    print("\nbest prompt validation\n", best_prompt)
+    print("\nbest prompt validation: ", best_prompt)
     print("score: ", best_prompt.validation_score,)
 
     # Test call for baseline prompt
@@ -317,9 +299,6 @@ async def main():
     prompt_node.test_rewards = rewards
     prompt_node.test_score = test_score
     prompt_node.set_test_mapping()
-    print("\n\nbaseline prompt test results: \n")
-    print(prompt_node.prompt)
-    print(prompt_node.test_score)
 
     # @ TEST CALL
     for curr_node in ordered_list_of_best_prompts:
@@ -334,20 +313,9 @@ async def main():
         curr_node.test_rewards = rewards
         curr_node.test_score = test_score
         curr_node.set_test_mapping()
-
-        # BASIC LOGGING
-        print("id: ", curr_node.id)
-        print("test")
-        print(curr_node.test_score)
-        # BASIC LOGGING END
-    # order based on test_score
-    ordered_list_of_best_prompts.sort(key = lambda x: x.test_score)
-    for node in ordered_list_of_best_prompts:
-        print(node.id)
-        print(node.test_score)
     
-    print("best prompt: ", ordered_list_of_best_prompts[-1].prompt)
-    print("\nintegrated parameters:\n", ordered_list_of_best_prompts[-1].integrated_parameters)
+    print("best prompt test: ", ordered_list_of_best_prompts[-1].prompt)
+    print("\nintegrated parameters: ", ordered_list_of_best_prompts[-1].integrated_parameters)
 
     list_for_df = []
     for node in node_heap:
@@ -355,7 +323,6 @@ async def main():
         list_for_df.append(dict_of_node)
     
     df_nodes = pd.DataFrame(list_for_df)
-    print(df_nodes)
 
     csv_file_path = "results_dataframe.csv"
     try:
