@@ -121,6 +121,7 @@ class MAB:
         reward = max(0.0, float(score))
         for k, v in params_obj.items():
             self.params_data[k]['results'].insert(0, reward)
+            
             alpha_val = 1.0
             beta_val = 1.0
             if len(self.params_data[k]['results']) < self.window_size:

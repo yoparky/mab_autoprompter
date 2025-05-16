@@ -1,8 +1,8 @@
 from typing import List, Dict
 import random
 import math
-
 import pandas as pd
+from datasets import load_dataset
 
 def dataframe_to_list_of_dicts(df: pd.DataFrame) -> List[Dict]:
     """Converts a pandas DataFrame to a list of dictionaries."""
@@ -31,6 +31,28 @@ def split_data(dataset, test_ratio = 0.5, train_ratio = 0.3, val_ratio = 0.2):
         val_set = dataset[train_end_index:]
 
     return test_set, train_set, val_set
+
+def hf_dataset_to_list_of_dict(dataset_title, token, update_input={}): # TODO: add common answer if needed as arg
+    hf_dataset = load_dataset(dataset_title, token=token)
+    
+    train = hf_dataset["train"].add_column("question", ["extract"] * len(hf_dataset["train"]))
+    val = hf_dataset["eval"].add_column("question", ["extract"] * len(hf_dataset["eval"]))
+    test = hf_dataset["test"].add_column("question", ["extract"] * len(hf_dataset["test"])) # we should use fill_non_existant_columns_uniformly to fill out the data
+
+    if update_input:
+        train = train.rename_columns(column_mapping=update_input)
+        val = val.rename_columns(column_mapping=update_input)
+        test = test.rename_columns(column_mapping=update_input)
+        
+    return list(train), list(val), list(test)
+    
+def fill_non_existant_columns_uniformly(list_of_dict, column_key_and_uniform_value):
+    if not column_key_and_uniform_value:
+        return
+    for testcase in list_of_dict:
+        for k, v in column_key_and_uniform_value.items():
+            testcase[k] = v
+    return
 
 ######################################################################
 # Data specific

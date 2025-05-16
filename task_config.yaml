@@ -50,7 +50,13 @@ llm_advanced_generator: "openai"
 llm_advanced_generator_model: "o3-2025-04-16"
 llm_advanced_generator_temperature: 1.0
 
-test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
+# test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
+test_prompt: >
+  "Extract and return as dict of fields: 'Invoice Number', 'Invoice Date', 'Total Amount', 'Seller Name', 'Seller Address', 'Buyer Name', 'Buyer Address', 'Consignee Name', 'Consignee Address', 'Notify Party Name', 'Notify Party Address', 'Terms and Delivery Payment', 'HS Code', 'Product Name', 'Quantity', 'Unit Price', 'Amount', 'Total Quantity', 'Bank Name', 'Bank Account Number', 'Swift Code', 'Currency', 'ETA', 'ETD', 'From Origin', 'To Destination', 'Number and Date of Order', 'LC Number and Date', 'Number and Kind of Package', 'Shipping Marks', 'Vessel Flight', 'Signature' in this invoice:\n\n
+  {{ context }}
+  \n\nPopulate each field based on the invoice content. Return the extracted data using the following schema (each field as a list, even if it contains only one item, if a field is missing, leave its list empty):\n```python\n{\n    'ETA_v': [],\n    'ETD_v': [],\n    'L/C_no_and_date_v': [],\n    'amount_v': [],\n    'bank_account_v': [],\n    'bank_name_v': [],\n    'buyer_address_v': [],\n    'buyer_name_v': [],\n    'consingnee_address_v': [],\n    'consingnee_name_v': [],\n    'currency_v': [],\n    'from_v': [],\n    'goods_name_v': [],\n    'hscode_v': [],\n    'invoice_date': [],\n    'invoice_no': [],\n    'no&date_of_order_v': [],\n    'no&kind_of_pkg_v': [],\n    'notify_party_address_v': [],\n    'notify_party_name_v': [],\n    'quantity_v': [],\n    'seller_address_v': [],\n    'seller_name_v': [],\n    'shipping_marks_v': [],\n    'signature_v': [],\n    'swift_code_v': [],\n    'terms_of_delivery_and_payment_v': [],\n    'to_v': [],\n    'total_amount_v': [],\n    'total_quantity_v': [],\n    'unit_price_v': [],\n    'vessel/flight_v': []\n}
+  Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go.
+  "
 analyze_correct_reasoning_prompt: "Given a question and the ground truth answer from a dataset, output the correct reasoning steps to reach the ground truth from the question. Think step by step, but demarcate your final answer to start with '---REASONING_START---' and '---REASONING_END---' verbatim, between which your actual reasoning output will go. Context: {{context}}\n Question: {{question}}\n, Answer: {{answer}}\n"
 infer_hard_cases_prompt: > # gotta change metric part
   "Given a prompt asked to an llm, the answer that the llm provided, the ground truth, and the
@@ -130,4 +136,5 @@ update_prompt: >
   Then, demarcate your updated prompt to start 
   with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
   between which your improved version of the provided prompt will go.
+  Variables inside double curly braces must be verbatim from the original prompt and none must be added.
   "

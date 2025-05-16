@@ -83,8 +83,8 @@ def visualize_prompt_tree(csv_path, output_filename="prompt_version_tree", outpu
         # Construct Node Label
         label_lines = [f"ID: {node_id_str}"]
         # Check for score existence using the internal names
-        test_score_exists = pd.notna(row['internal_test_score'])
-        train_score_exists = pd.notna(row['internal_train_score'])
+        test_score_exists = pd.notna(row['internal_test_score']) and row['internal_test_score'] != 0.0
+        train_score_exists = pd.notna(row['internal_train_score']) and row['internal_train_score'] != 0.0
         validation_score_exists = pd.notna(row['internal_validation_score'])
 
         if test_score_exists:

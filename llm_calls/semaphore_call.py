@@ -11,7 +11,7 @@ async def unified_call(llm, semaphore, testcase, prompt, input_dict):
         chat_prompt = ChatPromptTemplate.from_template(prompt, template_format="jinja2")
         chain = chat_prompt | llm
         try:
-            processed_input_dict = {prompt_key: testcase[testcase_key] for prompt_key, testcase_key in input_dict.items()}
+            processed_input_dict = {prompt_key: testcase[testcase_key] for prompt_key, testcase_key in input_dict.items() if testcase_key in testcase.keys()}
             used_prompt_literal = await chat_prompt.ainvoke(processed_input_dict)
             used_prompt_literal = used_prompt_literal.to_string()
             response = await chain.ainvoke(processed_input_dict)
