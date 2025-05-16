@@ -47,6 +47,7 @@ async def main():
     # heap
     node_heap = []
     heapq.heapify(node_heap)
+    all_nodes = []
 
     # Test case logic start. Can use same logic for test set
     val_set_lookup = {}
@@ -70,6 +71,7 @@ async def main():
 
     prompt_node = PromptNode(original_prompt, prev_par)
     prompt_node.update_parameters(next_prompt_params)
+    all_nodes.append(prompt_node)
 
     # generated prompts to validate
     to_validate = [prompt_node]
@@ -99,6 +101,8 @@ async def main():
                     heapq.heappush(node_heap, generated_node)
                 else:
                     heapq.heappushpop(node_heap, generated_node)
+                # Store heap for result logging
+                all_nodes.append(generated_node)
             # At this point, all the nodes that were generated have updated validation scores and the heap is updated based on the validation values
 
             # We now must pick out the best unexplored node in the heap and start the expansion (generation) process
@@ -305,7 +309,7 @@ async def main():
 
     # Write logs
     list_for_df = []
-    for node in node_heap:
+    for node in all_nodes:
         dict_of_node = node.to_dict()
         list_for_df.append(dict_of_node)
     
