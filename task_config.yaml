@@ -2,12 +2,13 @@
 
 # Meta parameters, prompts config
 parameters_file_path: "./config/prompt_parameters_v1.yaml"
+llm_prompt_config_path: "./config/llm_prompt_config.yaml"
 
 # Dataset config
 # dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
 dataset_file_path: "./data/data_sets/gsm8k_train.jsonl"
 dataset_cut_start_index: 300
-dataset_cut_end_index: 320
+dataset_cut_end_index: 310
 
 # Results config
 output_file_path: "./results/results_dataframe.csv"
@@ -49,81 +50,3 @@ llm_generator_temperature: 0.7
 llm_advanced_generator: "openai" 
 llm_advanced_generator_model: "o3-2025-04-16"
 llm_advanced_generator_temperature: 1.0
-
-test_prompt: >
-  "Answer the question.\n
-  Context: {{context}}\n
-  Question: {{question}}\n
-  Think step by step, but demarcate your final answer with '---ANSWER_START---' and '---ANSWER_END---' verbatim."
-
-analyze_correct_reasoning_prompt: > # 1 time per question (caches results)
-  "Given a question and the ground truth from a dataset, output the correct reasoning steps to reach the ground truth from the question\n. 
-  Context: {{context}}\n
-  Question: {{question}}\n
-  Ground Truth: {{answer}}\n
-  Think step by step, but demarcate your final answer with '---REASONING_START---' and '---REASONING_END---' verbatim.\n"
-
-infer_hard_cases_prompt: > # k times per iteration
-  "Provide a short analysis on why the llm output a different answer from the ground truth and how the prompt instructions can be improved to address this problem.\n 
-  prompt asked to llm: {{prompt}}\n
-  llm's answer: {{llm_answer}}\n
-  ground truth: {{ground_truth}}\n
-  correct logic to reach ground truth: {{correct_reasoning}}\n
-  Think step by step, but demarcate your final answer with '---ANALYSIS_START---' and '---ANALYSIS_END---' verbatim.\n
-  ---ANALYSIS_START--- 
-  YOUR ANALYSIS HERE 
-  ---ANALYSIS_END---"
-
-distill_patterns_from_hard_analysis_prompt: > # 1 times per iteration
-  "Distill the list of feedbacks into a series of direct actionable instructions that can be applied to improve the instructions prompt for an llm task.\n
-  original prompt:\n{{original_prompt}}\n
-  feedback list: {{feedback_list}}\n
-  
-  Base your distillation on the original prompt but do not attempt to output a new prompt.\n
-  Focus on patterns rather than detailed answers to potential examples provided in the original prompt.\n
-
-  Think step by step, but demarcate your final answer with '---DISTILLATION_START---' and '---DISTILLATION_END---' verbatim.
-  For example your output should be in the form:\n
-  ---DISTILLATION_START--- 
-  YOUR DISTILLATION HERE 
-  ---DISTILLATION_END---"
-
-parameter_selection_prompt: > # 1 time per iteration
-  "You are selecting parameters to direct improvements for an llm prompt.
-  In light of the active parameters, identify the most fitting parameter(s) from the `Parameters` dictionary that represent a needed change or further refinement. 
-  Then, map `Distilled Tips` for LLM prompt improvement to the most relevant `Parameters`.
-  If recommending a parameter already listed in `Active Parameters`, ensure the `Distilled Tip` strongly justifies its re-application or refinement.
-  Your output must be a Python dictionary. The keys will be the selected parameter codes. 
-  The values should be concise (1-2 sentences) actionable instructions indicating how the parameter addresses the tip, potentially acknowledging if it's refining an active parameter.
-  Inputs: 
-  - `Distilled Tips`: {{distilled_tips}}
-  - `Parameters`: {{params}}
-  - `Active Parameters`: {{active_parameters}} (this is the list of parameter codes currently active in the prompt)
-
-  Think step-by-step to determine your matches. Your final response must ONLY contain the Python dictionary, demarcated as follows:
-  ---PARAMETER_START---
-  {output_dictionary_goes_here}
-  ---PARAMETER_END---
-
-  Example:
-  If `Distilled Tip` is "prompt is still a bit wordy, cut unnecessary phrases"
-  And `Parameters` includes `"INSTRUCTION_VERBOSITY_concise": "Make instructions brief."`
-  And `Active Parameters` is `["INSTRUCTION_VERBOSITY_concise", "REASONING_TECHNIQUES_chain_of_thought"]`
-
-  Your thinking: The tip wants more conciseness, even though it's already active. The feedback justifies further refinement. Actionable instruction should reflect this.
-
-  Final Output:
-  ---PARAMETER_START---
-  {"INSTRUCTION_VERBOSITY_concise": "Further refine prompt conciseness by removing any remaining redundant phrases."}
-  ---PARAMETER_END---"
-
-update_prompt: >
-  "Given parameters to improve the original prompt and corresponding actionable instructions, implement the suggested changes and produce an improved prompt.
-
-  original prompt (ignore n-shots in original prompt): {{original_prompt}}\n
-  actionable parameters: {{actionables}}\n
-  n-shot examples to provide in your new prompt (if any): {{n_shots}}\n
-
-  Think step by step and plan your changes before your output. 
-  Then, demarcate your updated prompt with '---PROMPT_START---' and '---PROMPT_END---' verbatim.
-  Variables inside double curly braces must be added verbatim from the original prompt with the double curly braces. Do not add new variables in curly braces."

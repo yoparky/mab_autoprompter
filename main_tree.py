@@ -5,8 +5,6 @@ import heapq
 import random
 import json
 import pandas as pd
-import os
-from dotenv import load_dotenv
 
 import logging
 import traceback
@@ -26,10 +24,14 @@ async def main():
     with open(config_file_path, "r") as file:
         config = yaml.safe_load(file)
     parameters_file_path = config["parameters_file_path"]
-    
+    llm_prompt_config_path = config["llm_prompt_config_path"]
+
     with open(parameters_file_path, "r") as file:
         params = yaml.safe_load(file)
     dataset_file_path = config["dataset_file_path"]
+
+    with open(llm_prompt_config_path, "r") as file:
+        prompt_config = yaml.safe_load(file)
 
     # DATA PREP
     # must make sure datasets have a unique "_id" column
@@ -76,10 +78,9 @@ async def main():
     mab.initialize_params_data(params)
 
     # set-up for original prompt object
-    original_prompt = config["test_prompt"]
+    original_prompt = prompt_config["test_prompt"]
     next_prompt_params = "{}"
     prev_par = None
-
     prompt_node = PromptNode(original_prompt, prev_par)
     prompt_node.update_parameters(next_prompt_params)
     all_nodes.append(prompt_node)
@@ -87,14 +88,12 @@ async def main():
     # generated prompts to validate
     to_validate = [prompt_node]
 
-    # Main linear loop
-    
+    # Main tree loop
     for _ in range(config["tree_generative_iteration"]):
         try:
             for generated_node in to_validate:
                 # @ VALIDATION
-                input_dict = {"context": "context", "question": "question"}
-                answer = await batch_unified_call(student_llm, semaphore, val_set, generated_node.prompt, input_dict)
+                answer = await batch_unified_call(student_llm, semaphore, val_set, generated_node.prompt, prompt_config['test_prompt_input_dict'])
                 generated_node.set_validation_data(answer, '---ANSWER_START---', '---ANSWER_END---')
                 rewards = []
                 for i, item in enumerate(generated_node.validation_answers):
@@ -128,8 +127,7 @@ async def main():
             # at this point we have the node we have to train
 
             # @ TRAIN the selected node_to_expand
-            input_dict = {"context": "context", "question": "question"}
-            answer = await batch_unified_call(student_llm, semaphore, train_set, node_to_expand.prompt, input_dict)
+            answer = await batch_unified_call(student_llm, semaphore, train_set, node_to_expand.prompt, prompt_config['test_prompt_input_dict'])
             node_to_expand.set_train_data(answer, '---ANSWER_START---', '---ANSWER_END---')
             rewards = []
             for i, item in enumerate(node_to_expand.train_answers):
@@ -149,9 +147,7 @@ async def main():
                     list_of_testcases_to_analyze.append(item)
             # Retrieve unpopulated analyses for hard questions that have not been analyzed
             if list_of_testcases_to_analyze:
-                analysis_prompt = config["analyze_correct_reasoning_prompt"]
-                input_dict = {"context": "context", "question": "question", "answer": "answer"}
-                answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_to_analyze, analysis_prompt, input_dict)
+                answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_to_analyze, prompt_config["analyze_correct_reasoning_prompt"], prompt_config['analyze_correct_reasoning_input_dict'])
                 for i, item in enumerate(answer[0]):
                     reasoning = extract_demarcated_string(item, "---REASONING_START---", "---REASONING_END---")
                     mab.add_correct_reasoning_to_gt(answer[1][i], reasoning)
@@ -166,8 +162,7 @@ async def main():
                 to_add["ground_truth"] = train_set[train_set_lookup[item]]["answer"]
                 to_add["correct_reasoning"] = mab.test_data[item]["reasoning"]
                 list_of_testcases_for_analyze_cust.append(to_add)
-            input_dict = {"prompt": "prompt", "llm_answer": "llm_answer", "ground_truth": "ground_truth", "correct_reasoning": "correct_reasoning"}
-            answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_for_analyze_cust, config["infer_hard_cases_prompt"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, list_of_testcases_for_analyze_cust, prompt_config["infer_hard_cases_prompt"], prompt_config['infer_hard_cases_input_dict'])
             for i, item in enumerate(answer[1]): # results are stored in node_to_expand
                 node_to_expand.train_hard_analysis[answer[1][i]] = extract_demarcated_string(answer[0][i], "---ANALYSIS_START---", "---ANALYSIS_END---")
 
@@ -177,15 +172,13 @@ async def main():
             for k, v in node_to_expand.train_hard_analysis.items():
                 distillation += v + "\n"
             input_for_distillation.append({"_id": "distillation", "feedback_list": distillation, "original_prompt": node_to_expand.prompt})
-            input_dict = {"feedback_list": "feedback_list", "original_prompt": "original_prompt"}
-            answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis_prompt"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, prompt_config["distill_patterns_from_hard_analysis_prompt"], prompt_config['distill_patterns_from_hard_analysis_input_dict'])
             distilled_actionables = extract_demarcated_string(answer[0][0], "---DISTILLATION_START---", "---DISTILLATION_END---")
 
             # @ PARAMETER CALL
             input_for_parameter = []
             input_for_parameter.append({"_id": "param_selection","distilled_tips": distilled_actionables, "params": json.dumps(params), "active_parameters": node_to_expand.integrated_parameters}) # unify terminology
-            input_dict = {"distilled_tips": "distilled_tips", "params": "params", "active_parameters": "active_parameters"}
-            answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, config["parameter_selection_prompt"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, prompt_config["parameter_selection_prompt"], prompt_config['parameter_selection_input_dict'])
             selected_parameters = extract_demarcated_string(answer[0][0], "---PARAMETER_START---", "---PARAMETER_END---")
 
             # @ RANK PARAMS BASED ON MAB, ONLY APPLY TOP J
@@ -263,8 +256,7 @@ async def main():
             input_for_prompt_update = []
             for key_str in picked_strategies:
                 input_for_prompt_update.append(strategies[key_str])
-            input_dict = {"original_prompt": "original_prompt", "actionables": "actionables", "n_shots": "n_shots"}
-            answer = await batch_unified_call(advanced_generator_llm, semaphore, input_for_prompt_update, config["update_prompt"], input_dict)
+            answer = await batch_unified_call(advanced_generator_llm, semaphore, input_for_prompt_update, prompt_config["update_prompt"], prompt_config['update_input_dict'])
             for i, call_input in enumerate(input_for_prompt_update):
                 param_string = call_input["actionables"]
                 new_prompt_str = extract_demarcated_string(answer[0][i], "---PROMPT_START---", "---PROMPT_END---")
@@ -290,8 +282,7 @@ async def main():
     print("score: ", best_prompt.validation_score,)
 
     # @ TEST CALL for baseline prompt
-    input_dict = {"context": "context", "question": "question"}
-    answer = await batch_unified_call(student_llm, semaphore, test_set, prompt_node.prompt, input_dict)
+    answer = await batch_unified_call(student_llm, semaphore, test_set, prompt_node.prompt, prompt_config['test_prompt_input_dict'])
     prompt_node.set_test_data(answer, '---ANSWER_START---', '---ANSWER_END---')
     rewards = []
     for i, item in enumerate(prompt_node.test_answers):
@@ -304,8 +295,7 @@ async def main():
 
     # @ TEST CALL
     for curr_node in ordered_list_of_best_prompts:
-        input_dict = {"context": "context", "question": "question"}
-        answer = await batch_unified_call(student_llm, semaphore, test_set, curr_node.prompt, input_dict)
+        answer = await batch_unified_call(student_llm, semaphore, test_set, curr_node.prompt, prompt_config['test_prompt_input_dict'])
         curr_node.set_test_data(answer, '---ANSWER_START---', '---ANSWER_END---')
         rewards = []
         for i, item in enumerate(curr_node.test_answers):
