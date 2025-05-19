@@ -4,3 +4,4 @@ data/__pycache__/
 llm_calls/__pycache__/
 utils/__pycache__/
 *.pyc
+data/.DS_Store
