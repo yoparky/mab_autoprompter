@@ -1,4 +1,5 @@
 from typing import List, Dict
+import uuid
 import random
 import math
 import pandas as pd
@@ -32,27 +33,25 @@ def split_data(dataset, test_ratio = 0.5, train_ratio = 0.3, val_ratio = 0.2):
 
     return test_set, train_set, val_set
 
-def hf_dataset_to_list_of_dict(dataset_title, token, update_input={}): # TODO: add common answer if needed as arg
-    hf_dataset = load_dataset(dataset_title, token=token)
-    
-    train = hf_dataset["train"].add_column("question", ["extract"] * len(hf_dataset["train"]))
-    val = hf_dataset["eval"].add_column("question", ["extract"] * len(hf_dataset["eval"]))
-    test = hf_dataset["test"].add_column("question", ["extract"] * len(hf_dataset["test"])) # we should use fill_non_existant_columns_uniformly to fill out the data
+def hf_dataset_to_list_of_dict(dataset_title, split_name="train", config_name="", token="", rename_column_mapping={}, add_column_mapping={}, add_id=False):
+    dataset = None
+    if config_name:
+        dataset = load_dataset(dataset_title, config_name, token=token)
+    else:
+        dataset = load_dataset(dataset_title, token=token)
 
-    if update_input:
-        train = train.rename_columns(column_mapping=update_input)
-        val = val.rename_columns(column_mapping=update_input)
-        test = test.rename_columns(column_mapping=update_input)
-        
-    return list(train), list(val), list(test)
-    
-def fill_non_existant_columns_uniformly(list_of_dict, column_key_and_uniform_value):
-    if not column_key_and_uniform_value:
-        return
-    for testcase in list_of_dict:
-        for k, v in column_key_and_uniform_value.items():
-            testcase[k] = v
-    return
+    dataset_split = dataset[split_name]
+    dataset_split = dataset_split.rename_columns(column_mapping=rename_column_mapping)
+    for k, v in add_column_mapping.items():
+        new_column = [v] * len(dataset_split)
+        dataset_split = dataset_split.add_column(k, new_column)
+    if add_id:
+        id_col = []
+        for i in range(len(dataset_split)):
+            id_col.append(str(uuid.uuid4()))
+        dataset_split = dataset_split.add_column('_id', id_col)
+    dataset_list = list(dataset_split)
+    return dataset_list
 
 ######################################################################
 # Data specific
@@ -137,4 +136,28 @@ def squad_json_to_dataframe_from_file(file_path):
                 rows_list.append(row)
 
     return pd.DataFrame(rows_list)
+
+
+def jsonl_filepath_to_list_of_testcases(file_path):
+    """
+    Converts JSONL data from a file to a list of dict.
+
+    Args:
+      file_path (str): The path to the SQuAD JSON file.
+
+    Returns:
+      list of test cases (List[Dict])
+    """
+    testcases = []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                testcase = json.loads(line)
+                testcase['_id'] = str(uuid.uuid4())
+                testcase['context'] = ""
+                testcases.append(testcase)
+    except Exception as e:
+        print(f"An unexpected error occurred while reading the file: {e}")
+        return None
+    return testcases
 

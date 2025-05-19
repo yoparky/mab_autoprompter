@@ -1,7 +1,7 @@
 import asyncio
 
-# import logging
-# import traceback
+import logging
+import traceback
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.language_models import BaseChatModel 
@@ -17,15 +17,15 @@ async def unified_call(llm, semaphore, testcase, prompt, input_dict):
             response = await chain.ainvoke(processed_input_dict)
             return response, testcase["_id"], used_prompt_literal
         except Exception as e: 
-            # error_type = type(e).__name__
-            # error_message = str(e)
-            # full_traceback = traceback.format_exc()
-            # logging.error(
-            #     f"Error in unified_call for testcase_id '{testcase.get('_id', 'UnknownID')}':\n"
-            #     f"Type: {error_type}\n"
-            #     f"Message: {error_message}\n"
-            #     f"Traceback:\n{full_traceback}"
-            # )
+            error_type = type(e).__name__
+            error_message = str(e)
+            full_traceback = traceback.format_exc()
+            logging.error(
+                f"Error in unified_call for testcase_id '{testcase.get('_id', 'UnknownID')}':\n"
+                f"Type: {error_type}\n"
+                f"Message: {error_message}\n"
+                f"Traceback:\n{full_traceback}"
+            )
             return None, testcase["_id"], None
 
 async def batch_unified_call(llm, semaphore, testcases, prompt, input_dict):

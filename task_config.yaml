@@ -5,16 +5,16 @@ parameters_file_path: "./config/prompt_parameters_v1.yaml"
 
 # Dataset config
 # dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
-dataset_file_path: "./data/data_sets/hotpot_dev_fullwiki_v1.json"
+dataset_file_path: "./data/data_sets/gsm8k_train.jsonl"
 dataset_cut_start_index: 300
-dataset_cut_end_index: 400
+dataset_cut_end_index: 320
 
 # Results config
 output_file_path: "./results/results_dataframe.csv"
 output_tree_path: "./results/prompt_tree"
 
 # tree control
-tree_generative_iteration: 5
+tree_generative_iteration: 2
 children_generation_per_node_expansion: 4
 
 # linear control
@@ -24,10 +24,10 @@ loop_iteration_count: 5
 max_concurrent_calls: 4 # Semaphore count
 
 # heap
-heap_size: 5
+heap_size: 3
 
 # max n-shots
-max_n_shots: 4
+max_n_shots: 3
 # hard question sampling count
 hard_sample_count: 5
 # param sampling count per generation
@@ -50,64 +50,57 @@ llm_advanced_generator: "openai"
 llm_advanced_generator_model: "o3-2025-04-16"
 llm_advanced_generator_temperature: 1.0
 
-# test_prompt: "answer the question using only the following context. If you think you cannot answer based on the context, output an empty string. Here is your context and question: {{context}}\n{{question}}. Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go."
 test_prompt: >
-  "Extract and return as dict of fields: 'Invoice Number', 'Invoice Date', 'Total Amount', 'Seller Name', 'Seller Address', 'Buyer Name', 'Buyer Address', 'Consignee Name', 'Consignee Address', 'Notify Party Name', 'Notify Party Address', 'Terms and Delivery Payment', 'HS Code', 'Product Name', 'Quantity', 'Unit Price', 'Amount', 'Total Quantity', 'Bank Name', 'Bank Account Number', 'Swift Code', 'Currency', 'ETA', 'ETD', 'From Origin', 'To Destination', 'Number and Date of Order', 'LC Number and Date', 'Number and Kind of Package', 'Shipping Marks', 'Vessel Flight', 'Signature' in this invoice:\n\n
-  {{ context }}
-  \n\nPopulate each field based on the invoice content. Return the extracted data using the following schema (each field as a list, even if it contains only one item, if a field is missing, leave its list empty):\n```python\n{\n    'ETA_v': [],\n    'ETD_v': [],\n    'L/C_no_and_date_v': [],\n    'amount_v': [],\n    'bank_account_v': [],\n    'bank_name_v': [],\n    'buyer_address_v': [],\n    'buyer_name_v': [],\n    'consingnee_address_v': [],\n    'consingnee_name_v': [],\n    'currency_v': [],\n    'from_v': [],\n    'goods_name_v': [],\n    'hscode_v': [],\n    'invoice_date': [],\n    'invoice_no': [],\n    'no&date_of_order_v': [],\n    'no&kind_of_pkg_v': [],\n    'notify_party_address_v': [],\n    'notify_party_name_v': [],\n    'quantity_v': [],\n    'seller_address_v': [],\n    'seller_name_v': [],\n    'shipping_marks_v': [],\n    'signature_v': [],\n    'swift_code_v': [],\n    'terms_of_delivery_and_payment_v': [],\n    'to_v': [],\n    'total_amount_v': [],\n    'total_quantity_v': [],\n    'unit_price_v': [],\n    'vessel/flight_v': []\n}
-  Think step by step, but demarcate your final answer to start with '---ANSWER_START---' and '---ANSWER_END---' verbatim, between which your actual answer will go.
-  "
-analyze_correct_reasoning_prompt: "Given a question and the ground truth answer from a dataset, output the correct reasoning steps to reach the ground truth from the question. Think step by step, but demarcate your final answer to start with '---REASONING_START---' and '---REASONING_END---' verbatim, between which your actual reasoning output will go. Context: {{context}}\n Question: {{question}}\n, Answer: {{answer}}\n"
-infer_hard_cases_prompt: > # gotta change metric part
-  "Given a prompt asked to an llm, the answer that the llm provided, the ground truth, and the
-  correct logic to reach the ground truth, provide a short analysis on why the llm's answer was different from the ground 
-  truth and how the prompt instructions can be improved to address this problem.\n Start your analysis with a short summary of what the context is about and what the question asks.
-  Prompt asked to the llm: {{prompt}}\n\n
+  "Answer the question.\n
+  Context: {{context}}\n
+  Question: {{question}}\n
+  Think step by step, but demarcate your final answer with '---ANSWER_START---' and '---ANSWER_END---' verbatim."
+
+analyze_correct_reasoning_prompt: > # 1 time per question (caches results)
+  "Given a question and the ground truth from a dataset, output the correct reasoning steps to reach the ground truth from the question\n. 
+  Context: {{context}}\n
+  Question: {{question}}\n
+  Ground Truth: {{answer}}\n
+  Think step by step, but demarcate your final answer with '---REASONING_START---' and '---REASONING_END---' verbatim.\n"
+
+infer_hard_cases_prompt: > # k times per iteration
+  "Provide a short analysis on why the llm output a different answer from the ground truth and how the prompt instructions can be improved to address this problem.\n 
+  prompt asked to llm: {{prompt}}\n
   llm's answer: {{llm_answer}}\n
   ground truth: {{ground_truth}}\n
   correct logic to reach ground truth: {{correct_reasoning}}\n
-  metric used during evaluation: f1\n
+  Think step by step, but demarcate your final answer with '---ANALYSIS_START---' and '---ANALYSIS_END---' verbatim.\n
+  ---ANALYSIS_START--- 
+  YOUR ANALYSIS HERE 
+  ---ANALYSIS_END---"
 
-  Think step by step, but demarcate your final answer to start 
-  with '---ANALYSIS_START---' and end with '---ANALYSIS_END---' verbatim, 
-  between which your actual answer will go."
-
-distill_patterns_from_hard_analysis: >
-  "Given a series of feedback analyzing hard questions that an llm attempted to answer,  
-  distill the provided feedbacks into a series of direct actionable instructions that can be applied to improve the 
-  instructions prompt that the llm received. 
-  \n feedback list: {{feedback_list}}\n
+distill_patterns_from_hard_analysis_prompt: > # 1 times per iteration
+  "Distill the list of feedbacks into a series of direct actionable instructions that can be applied to improve the instructions prompt for an llm task.\n
   original prompt:\n{{original_prompt}}\n
-
-  The original prompt is there to base your distillation. Do not attempt to output a new prompt.
-  The new prompt answering llm will not have access to the ground truth and will only be provided the context and question.
-  Focus on patterns rather than detailed answers to potential examples provided in the original prompt.
-
-  Think step by step, but demarcate your final answer to start 
-  with '---DISTILLATION_START---' and end with '---DISTILLATION_END---' verbatim, 
-  between which your actual answer will go. For example your output should be in the form:\n
-  ---DISTILLATION_START---
-  YOUR DISTILLATION HERE
-  ---DISTILLATION_END---
-  "
-
-
-parameter_selection_call: >
-  "Your objective is to map `Distilled Tips` for LLM prompt improvement to the most relevant `Parameters` 
-  considering the parameters already active in the prompt being analyzed.
+  feedback list: {{feedback_list}}\n
   
-  Inputs:
+  Base your distillation on the original prompt but do not attempt to output a new prompt.\n
+  Focus on patterns rather than detailed answers to potential examples provided in the original prompt.\n
+
+  Think step by step, but demarcate your final answer with '---DISTILLATION_START---' and '---DISTILLATION_END---' verbatim.
+  For example your output should be in the form:\n
+  ---DISTILLATION_START--- 
+  YOUR DISTILLATION HERE 
+  ---DISTILLATION_END---"
+
+parameter_selection_prompt: > # 1 time per iteration
+  "You are selecting parameters to direct improvements for an llm prompt.
+  In light of the active parameters, identify the most fitting parameter(s) from the `Parameters` dictionary that represent a needed change or further refinement. 
+  Then, map `Distilled Tips` for LLM prompt improvement to the most relevant `Parameters`.
+  If recommending a parameter already listed in `Active Parameters`, ensure the `Distilled Tip` strongly justifies its re-application or refinement.
+  Your output must be a Python dictionary. The keys will be the selected parameter codes. 
+  The values should be concise (1-2 sentences) actionable instructions indicating how the parameter addresses the tip, potentially acknowledging if it's refining an active parameter.
+  Inputs: 
   - `Distilled Tips`: {{distilled_tips}}
   - `Parameters`: {{params}}
   - `Active Parameters`: {{active_parameters}} (this is the list of parameter codes currently active in the prompt)
-  In light of the active parameters, identify the most fitting parameter(s) from the `Parameters` dictionary that represent 
-  a needed change or further refinement.
-  If recommending a parameter already listed in `Active Parameters`, ensure the `Distilled Tip` strongly justifies its re-application or refinement.
-  Your output must be a Python dictionary. The keys will be the selected parameter codes. 
-  The values should be concise (1-2 sentences) actionable instructions indicating how the parameter addresses the tip, 
-  potentially acknowledging if it's refining an active parameter.
 
-  Think step-by-step to determine your matches. However, your final response must ONLY contain the Python dictionary, demarcated as follows:
+  Think step-by-step to determine your matches. Your final response must ONLY contain the Python dictionary, demarcated as follows:
   ---PARAMETER_START---
   {output_dictionary_goes_here}
   ---PARAMETER_END---
@@ -122,19 +115,15 @@ parameter_selection_call: >
   Final Output:
   ---PARAMETER_START---
   {"INSTRUCTION_VERBOSITY_concise": "Further refine prompt conciseness by removing any remaining redundant phrases."}
-  ---PARAMETER_END---
-  "
+  ---PARAMETER_END---"
 
 update_prompt: >
-  "Given actionable parameters to improve the given prompt and its instructions, implement the suggested changes and produce an improved prompt.
+  "Given parameters to improve the original prompt and corresponding actionable instructions, implement the suggested changes and produce an improved prompt.
 
   original prompt (ignore n-shots in original prompt): {{original_prompt}}\n
   actionable parameters: {{actionables}}\n
   n-shot examples to provide in your new prompt (if any): {{n_shots}}\n
 
-  Think step by step and plan your changes before your output under a section named "---CHANGE_PLAN---". 
-  Then, demarcate your updated prompt to start 
-  with '---PROMPT_START---' and end with '---PROMPT_END---' verbatim, 
-  between which your improved version of the provided prompt will go.
-  Variables inside double curly braces must be verbatim from the original prompt and none must be added.
-  "
+  Think step by step and plan your changes before your output. 
+  Then, demarcate your updated prompt with '---PROMPT_START---' and '---PROMPT_END---' verbatim.
+  Variables inside double curly braces must be added verbatim from the original prompt with the double curly braces. Do not add new variables in curly braces."

@@ -24,3 +24,10 @@ def exact_match(row_gt: Dict, llm_answer: str):
     llm_answer = normalize_answer(llm_answer)
 
     return 1.0 if gt == llm_answer else 0.0
+
+def exact_match_gsm8k(row_gt: Dict, llm_answer: str):
+    gt = str(row_gt["answer"]).split("####")[-1].strip()
+    gt = normalize_answer(gt)
+    llm_answer = normalize_answer(llm_answer)
+
+    return 1.0 if gt == llm_answer else 0.0

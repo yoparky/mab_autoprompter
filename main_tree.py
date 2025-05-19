@@ -12,10 +12,10 @@ import logging
 import traceback
 
 from llm_calls.llm_provider import create_llm_instance
-from data.data_preprocessing import dataframe_to_list_of_dicts, squad_json_to_dataframe_from_file, split_data, hpqa_filepath_to_list_of_testcases, hf_dataset_to_list_of_dict
+from data.data_preprocessing import dataframe_to_list_of_dicts, squad_json_to_dataframe_from_file, split_data, hpqa_filepath_to_list_of_testcases, hf_dataset_to_list_of_dict, jsonl_filepath_to_list_of_testcases
 from llm_calls.semaphore_call import batch_unified_call
 from utils.prompt_node import PromptNode
-from metrics.exact_match import exact_match
+from metrics.exact_match import exact_match, exact_match_gsm8k
 from metrics.f1_match import f1_match
 from llm_calls.regex_extractor import extract_demarcated_string
 from utils.mab import MAB
@@ -34,9 +34,12 @@ async def main():
     # DATA PREP
     # must make sure datasets have a unique "_id" column
     # dataset = dataframe_to_list_of_dicts(squad_json_to_dataframe_from_file(dataset_file_path)) # SQuAD
-    dataset = hpqa_filepath_to_list_of_testcases(dataset_file_path) # HPQA
+    # dataset = hpqa_filepath_to_list_of_testcases(dataset_file_path) # HPQA
+    dataset = jsonl_filepath_to_list_of_testcases(dataset_file_path)
+
     dataset = dataset[config["dataset_cut_start_index"]:config["dataset_cut_end_index"]]
     test_set, train_set, val_set = split_data(dataset)
+
     # # hf dataset
     # data_update = {'filename': '_id', 'label': 'answer', 'text': 'context',}
     # load_dotenv()
@@ -95,7 +98,7 @@ async def main():
                 generated_node.set_validation_data(answer, '---ANSWER_START---', '---ANSWER_END---')
                 rewards = []
                 for i, item in enumerate(generated_node.validation_answers):
-                    reward = f1_match(val_set[val_set_lookup[generated_node.validation_ids[i]]], generated_node.validation_answers[i])
+                    reward = exact_match_gsm8k(val_set[val_set_lookup[generated_node.validation_ids[i]]], generated_node.validation_answers[i])
                     rewards.append(reward)
                 val_score = round(sum(rewards)/len(rewards) if len(rewards) > 0 else 0.0, 4)
                 generated_node.validation_rewards = rewards
@@ -130,7 +133,7 @@ async def main():
             node_to_expand.set_train_data(answer, '---ANSWER_START---', '---ANSWER_END---')
             rewards = []
             for i, item in enumerate(node_to_expand.train_answers):
-                reward = f1_match(train_set[train_set_lookup[node_to_expand.train_ids[i]]], node_to_expand.train_answers[i])
+                reward = exact_match_gsm8k(train_set[train_set_lookup[node_to_expand.train_ids[i]]], node_to_expand.train_answers[i])
                 mab.update_testcase_result(node_to_expand.train_ids[i], reward)
                 rewards.append(reward)
             train_score = round(sum(rewards)/len(rewards) if len(rewards) > 0 else 0.0, 4)
@@ -175,14 +178,14 @@ async def main():
                 distillation += v + "\n"
             input_for_distillation.append({"_id": "distillation", "feedback_list": distillation, "original_prompt": node_to_expand.prompt})
             input_dict = {"feedback_list": "feedback_list", "original_prompt": "original_prompt"}
-            answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_distillation, config["distill_patterns_from_hard_analysis_prompt"], input_dict)
             distilled_actionables = extract_demarcated_string(answer[0][0], "---DISTILLATION_START---", "---DISTILLATION_END---")
 
             # @ PARAMETER CALL
             input_for_parameter = []
             input_for_parameter.append({"_id": "param_selection","distilled_tips": distilled_actionables, "params": json.dumps(params), "active_parameters": node_to_expand.integrated_parameters}) # unify terminology
             input_dict = {"distilled_tips": "distilled_tips", "params": "params", "active_parameters": "active_parameters"}
-            answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, config["parameter_selection_call"], input_dict)
+            answer = await batch_unified_call(generator_llm, semaphore, input_for_parameter, config["parameter_selection_prompt"], input_dict)
             selected_parameters = extract_demarcated_string(answer[0][0], "---PARAMETER_START---", "---PARAMETER_END---")
 
             # @ RANK PARAMS BASED ON MAB, ONLY APPLY TOP J
@@ -292,7 +295,7 @@ async def main():
     prompt_node.set_test_data(answer, '---ANSWER_START---', '---ANSWER_END---')
     rewards = []
     for i, item in enumerate(prompt_node.test_answers):
-        reward = f1_match(test_set[test_set_lookup[prompt_node.test_ids[i]]], prompt_node.test_answers[i])
+        reward = exact_match_gsm8k(test_set[test_set_lookup[prompt_node.test_ids[i]]], prompt_node.test_answers[i])
         rewards.append(reward)
     test_score = round(sum(rewards)/len(rewards) if len(rewards) > 0 else 0.0, 4)
     prompt_node.test_rewards = rewards
@@ -306,7 +309,7 @@ async def main():
         curr_node.set_test_data(answer, '---ANSWER_START---', '---ANSWER_END---')
         rewards = []
         for i, item in enumerate(curr_node.test_answers):
-            reward = f1_match(test_set[test_set_lookup[curr_node.test_ids[i]]], curr_node.test_answers[i])
+            reward = exact_match_gsm8k(test_set[test_set_lookup[curr_node.test_ids[i]]], curr_node.test_answers[i])
             rewards.append(reward)
         test_score = round(sum(rewards)/len(rewards) if len(rewards) > 0 else 0.0, 4)
         curr_node.test_rewards = rewards
