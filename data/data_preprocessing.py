@@ -33,12 +33,12 @@ def split_data(dataset, test_ratio = 0.5, train_ratio = 0.3, val_ratio = 0.2):
 
     return test_set, train_set, val_set
 
-def hf_dataset_to_list_of_dict(dataset_title, split_name="train", config_name="", token="", rename_column_mapping={}, add_column_mapping={}, add_id=False):
+def hf_dataset_to_list_of_dict(dataset_title, split_name="train", config_name="", token="", trust_remote_code=False, rename_column_mapping={}, add_column_mapping={}, map_function=None, add_id=False):
     dataset = None
     if config_name:
-        dataset = load_dataset(dataset_title, config_name, token=token)
+        dataset = load_dataset(dataset_title, config_name, token=token, trust_remote_code=trust_remote_code)
     else:
-        dataset = load_dataset(dataset_title, token=token)
+        dataset = load_dataset(dataset_title, token=token, trust_remote_code=trust_remote_code)
 
     dataset_split = dataset[split_name]
     dataset_split = dataset_split.rename_columns(column_mapping=rename_column_mapping)
@@ -50,8 +50,33 @@ def hf_dataset_to_list_of_dict(dataset_title, split_name="train", config_name=""
         for i in range(len(dataset_split)):
             id_col.append(str(uuid.uuid4()))
         dataset_split = dataset_split.add_column('_id', id_col)
+        
+    if map_function:
+        dataset_split = dataset_split.map(map_function)
+    
     dataset_list = list(dataset_split)
     return dataset_list
+######################################################################
+# TwinDoc
+# dataset = hf_dataset_to_list_of_dict("TwinDoc/GIEI2", split_name="train", token="???", rename_column_mapping={'text' : 'context', 'label': 'answer', 'filename': '_id'}, add_column_mapping={"question": ""})
+
+# ARC
+# dataset = hf_dataset_to_list_of_dict("allenai/ai2_arc", split_name="train", config_name='ARC-Easy', token="???", rename_column_mapping={'choices' : 'context', 'answerKey': 'answer', 'id': '_id'})
+
+# BBH
+# dataset = hf_dataset_to_list_of_dict("maveriq/bigbenchhard", split_name="train", config_name='causal_judgement', token="???", rename_column_mapping={'input' : 'context', 'target': 'answer'}, add_id=True)
+
+# PiQA - requires custom input [question, choice_0, choice_1, answer]
+# dataset = hf_dataset_to_list_of_dict("ybisk/piqa", split_name="train", token="???", rename_column_mapping={'goal' : 'question', 'sol1': 'choice_0', 'sol2': 'choice_1', 'label': 'answer'}, add_id=True, trust_remote_code=True)
+
+# LogiQA - requires custom input [context, question, options, answer]
+# dataset = hf_dataset_to_list_of_dict("lucasmccabe/logiqa", split_name="train", token="???", rename_column_mapping={'query' : 'question', 'correct_option': 'answer'}, add_id=True)
+
+# DROP
+# dataset = hf_dataset_to_list_of_dict("ucinlp/drop", split_name="train", token="???", rename_column_mapping={'query_id' : '_id', 'passage': 'context'}, map_function=(lambda ex: {**ex, 'answer': ex['answers_spans']['spans']}))
+
+# JSONSchemaBench - requires custom input [json_schema]
+# dataset = hf_dataset_to_list_of_dict("epfl-dlab/JSONSchemaBench", split_name="train", token="???", rename_column_mapping={'unique_id' : '_id'})
 
 ######################################################################
 # Data specific
