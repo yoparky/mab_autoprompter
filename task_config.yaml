@@ -7,8 +7,12 @@ llm_prompt_config_path: "./config/llm_prompt_config.yaml"
 # Dataset config
 # dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
 dataset_file_path: "./data/data_sets/gsm8k_train.jsonl"
-dataset_cut_start_index: 300
-dataset_cut_end_index: 310
+dataset_cut_start_index: 300 # leave empty to start from 0
+dataset_cut_end_index: 310 # leave empty to go to end
+# Dataset split
+test_ratio: 0.5
+train_ratio: 0.3
+val_ratio: 0.2
 
 # Results config
 output_file_path: "./results/results_dataframe.csv"

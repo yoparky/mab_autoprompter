@@ -39,14 +39,9 @@ async def main():
     # dataset = hpqa_filepath_to_list_of_testcases(dataset_file_path) # HPQA
     dataset = jsonl_filepath_to_list_of_testcases(dataset_file_path)
 
+    # Data split
     dataset = dataset[config["dataset_cut_start_index"]:config["dataset_cut_end_index"]]
-    test_set, train_set, val_set = split_data(dataset)
-
-    # # hf dataset
-    # data_update = {'filename': '_id', 'label': 'answer', 'text': 'context',}
-    # load_dotenv()
-    # train_set, val_set, test_set = hf_dataset_to_list_of_dict("TwinDoc/GIEI2", os.getenv("HF_API_KEY"), data_update)
-    # train_set = train_set[:100]
+    test_set, train_set, val_set = split_data(dataset, config["test_ratio"], config["train_ratio"], config["val_ratio"])
 
     # llm setup
     student_llm = create_llm_instance(config["llm_provider"], config["llm_provider_model"], float(config["llm_provider_temperature"]))
