@@ -1,13 +1,13 @@
 import os
-import textgrad as tg
 from textgrad.engine.openai import ChatOpenAI
+import textgrad as tg
 import pandas as pd
 
 # LLM Setup
 os.environ['OPENAI_API_KEY'] = "vllm-compatible-server"
 os.environ['OPENAI_BASE_URL'] = "http://localhost:1234/v1" # config this
 engine = ChatOpenAI(model_string='<your-model-name>')
-tg.set_backwards_engine(engine, override=True)
+tg.set_backward_engine(engine, override=True)
 
 # dataset
 decisions_dataset = [
@@ -16,6 +16,8 @@ decisions_dataset = [
 ]
 decisions_df = pd.DataFrame(decisions_dataset)
 decisions_df.answer = decisions_df.answer.str.lower()
+# This is an example call, we can import the data_preprocessing's data loading functions to get the data we test
+# dataset = hf_dataset_to_list_of_dict("TwinDoc/GIEI2", split_name="train", token="???", rename_column_mapping={'text' : 'context', 'label': 'answer', 'filename': '_id'}, add_column_mapping={"question": ""})
 
 # prompt
 system_prompt = tg.Variable(value="""
@@ -36,6 +38,7 @@ Prediction: {pred}
 Ground Truth: {target}
 Evaluation: {eval}
 """
+print(format_string)
 
 loss_system_prompt = tg.Variable("""
 Your job is to provide feedback to a LLM classifier. You will get the question,
@@ -52,7 +55,7 @@ fields = {"system_prompt": None, "query": None, "pred": None, "target": None, "e
 formatted_llm_call = tg.autograd.FormattedLLMCall(engine=tg.get_engine("gpt-4o-mini"), # or just the local 'engine'
                                                   format_string=format_string,
                                                   fields=fields,
-                                                  systemp_prompt=loss_system_prompt)
+                                                  system_prompt=loss_system_prompt)
 optimizer = tg.TGD([system_prompt])
 
 def loss_fn(system_prompt, query, pred, target, eval):
