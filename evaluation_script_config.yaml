@@ -1,0 +1,24 @@
+# Incorporated data: HotpotQA, SQUaD, ARC, BBH, PiQA, LogiQA, DROP, JSONSchemaBench, TwinDoc
+
+# requires .env file to run openai api
+
+# prompts config
+llm_prompt_config_path: "./config/test_script_prompt_config.yaml"
+
+# Dataset config
+# dataset_file_path: "./data/data_sets/squad-train-v2.0.json"
+dataset_file_path: "./data/data_sets/gsm8k_train.jsonl"
+dataset_cut_start_index: 300 # leave empty to start from 0
+dataset_cut_end_index: 310 # leave empty to go to end
+# Dataset split
+test_ratio: 0.5
+train_ratio: 0.3
+val_ratio: 0.2
+
+# Concurrency 
+max_concurrent_calls: 4 # Semaphore count
+
+# llm provider options
+llm_provider: "openai" # "anthropic" "google" "ollama" "vllm" "url"
+llm_provider_model: "gpt-4o-mini"
+llm_provider_temperature: 0.0

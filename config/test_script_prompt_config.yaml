@@ -1,0 +1,6 @@
+test_prompt_input_dict: {"context": "context", "question": "question"} # var_name_in_prompt : actual_value
+test_prompt: >
+  "Answer the question.\n
+  Context: {{context}}\n
+  Question: {{question}}\n
+  Think step by step, but demarcate your final answer with '---ANSWER_START---' and '---ANSWER_END---' verbatim."
