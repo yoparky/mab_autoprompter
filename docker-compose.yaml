@@ -1,0 +1,30 @@
+services:
+  vllm:
+
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    environmnet:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 'all'
+              capabilities: [gpu]
+    volumes:
+      - /hosted/workspace/1_user/my_directory/models/Qwen3-14B:/mnt/model
+    ports:
+      - "3007:8000"
+    command: [
+      # "--model", "Qwen/Qwen3-32B",
+      "--model", "/mnt/model",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "--tensor-parallel-size", "4",
+      "--gpu-memory-utilization", "0.8",
+      "--max-model-len", "16384",
+      # "--no-enable-reasoning", this doesn't work...
+      # "--dtype", "half", 
+    ]
+
+    restart: unless-stopped
