@@ -1,3 +1,5 @@
+# Incorporated data: HotpotQA, SQUaD, ARC, BBH, PiQA, LogiQA, DROP, JSONSchemaBench, TwinDoc
+
 # requires .env file to run openai api
 
 # Meta parameters, prompts config

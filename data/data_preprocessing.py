@@ -57,6 +57,8 @@ def hf_dataset_to_list_of_dict(dataset_title, split_name="train", config_name=""
     dataset_list = list(dataset_split)
     return dataset_list
 ######################################################################
+# TwinDoc, HotpotQA (bdsaglam/hotpotqa-distractor), BBH, LogiQA, GSM8k (openai/gsm8k)
+
 # TwinDoc
 # dataset = hf_dataset_to_list_of_dict("TwinDoc/GIEI2", split_name="train", token="???", rename_column_mapping={'text' : 'context', 'label': 'answer', 'filename': '_id'}, add_column_mapping={"question": ""})
 

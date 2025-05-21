@@ -301,8 +301,8 @@ async def main():
         curr_node.test_score = test_score
         curr_node.set_test_mapping()
     
-    print("best prompt test: ", ordered_list_of_best_prompts[-1].prompt)
-    print("\nintegrated parameters: ", ordered_list_of_best_prompts[-1].integrated_parameters)
+    print("best prompt test: ", ordered_list_of_best_prompts[0].prompt)
+    print("\nintegrated parameters: ", ordered_list_of_best_prompts[0].integrated_parameters)
 
     # Write logs
     list_for_df = []
