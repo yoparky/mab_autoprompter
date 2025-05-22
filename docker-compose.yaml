@@ -3,26 +3,31 @@ services:
 
     image: vllm/vllm-openai:latest
     runtime: nvidia
-    environmnet:
+    environment:
+      - NCCL_P2P_DISABLE=1 # apparent fix for the strange nccl bug 
+      # https://github.com/vllm-project/vllm/issues/5484
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
+              # device_ids: ['1', '2']
               count: 'all'
               capabilities: [gpu]
     volumes:
-      - /hosted/workspace/1_user/my_directory/models/Qwen3-14B:/mnt/model
+      - /hosted/workspace/1_user/my_directory/models/Qwen3-32B:/mnt/model
     ports:
-      - "3007:8000"
+      - "3006:8000"
     command: [
       # "--model", "Qwen/Qwen3-32B",
       "--model", "/mnt/model",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--tensor-parallel-size", "4",
-      "--gpu-memory-utilization", "0.8",
+      "--gpu-memory-utilization", "0.90",
       "--max-model-len", "16384",
+      "--disable-custom-all-reduce",
+      # "--kv-cache-dtype", "fp8",
       # "--no-enable-reasoning", this doesn't work...
       # "--dtype", "half", 
     ]
